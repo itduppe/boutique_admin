@@ -11,10 +11,11 @@ const orderServices = {
     getAll: async (params = {}) => {
         try {
             const res = await UserApi.get("/orders", { params });
-            const { items, total, page, pageSize, totalPages } = res.data.data;
+            const { items, statusCount, total, page, pageSize, totalPages } = res.data.data;
 
             return {
                 data: items,
+                statusCount: statusCount,
                 total,
                 page: page,
                 pageSize,
@@ -26,9 +27,21 @@ const orderServices = {
         }
     },
 
-    updateStatusById: async (id) => {
+    getExport: async (params = {}) => {
         try {
-            const res = await UserApi.patch(`/orders/update-status/${id}`);
+            const res = await UserApi.get("/orders/export", {
+                params,
+                responseType: 'blob',
+            });
+            return res.data;
+        } catch (error) {
+            return handleError(error, "Lỗi khi xuất file Excel");
+        }
+    },
+
+    updateStatusById: async (credentials) => {
+        try {
+            const res = await UserApi.patch(`/orders/update-status/`, credentials);
             toast.success("Đổi thông tin thành công!");
             return res.data;
         } catch (error) {

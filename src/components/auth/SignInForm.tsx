@@ -49,7 +49,7 @@ export default function SignInForm() {
       if (res.status_code == 200 && res.data) {
         router.push('/admin');
       } else {
-        alert("Thông tin đăng nhập không chính xác !!!");
+        toast.error(res.message);
       }
     } catch (err) {
       setError('Đăng nhập thất bại. Vui lòng kiểm tra thông tin.');

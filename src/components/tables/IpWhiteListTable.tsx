@@ -15,12 +15,21 @@ import Input from "../form/input/InputField";
 import Label from "../form/Label";
 import ipWhitelistServices from '@/services/ipWhitelistServices';
 import { useAuth } from "@/context/AuthContext";
+import { getSiteSystem, setSiteSystem } from "@/utils/storage";
+
+const initialForm = {
+    ip: '',
+    note: '',
+    site: getSiteSystem(),
+    createdBy: '',
+    updatedBy: ''
+};
 
 export default function IpWhiteList() {
     const [userWhitelistIp, setUserWhitelistIp] = useState([]);
     const { isOpen, modalType, openModal, closeModal } = useMultiModal();
     const { user } = useAuth();
-    const [form, setForm] = useState({});
+    const [form, setForm] = useState(initialForm);
     const [error, setError] = useState('');
     const [loading, setLoading] = useState(false);
     const [editId, setEditId] = useState(null);
@@ -30,13 +39,6 @@ export default function IpWhiteList() {
 
     useEffect(() => {
         if (isOpen) {
-            setForm({
-                ip: '',
-                createdBy: user?.username,
-                note: '',
-                updatedBy: user?.username
-            });
-
             setError('');
         }
     }, [isOpen, modalType]);
@@ -48,24 +50,25 @@ export default function IpWhiteList() {
 
         try {
             let res;
+            form.createdBy = user.username ?? "Admin";
+
             if (modalType === "add") {
                 res = await ipWhitelistServices.postIpWhitelist(form);
                 if (res.status_code == 200) {
-                    alert(res.message)
                     closeModal();
-                    fetchUsers();
+                    fetchIpWhiteList();
                 } else {
-                    alert(res.message)
+                    toast.error(res.data.message)
                 }
             } else if (modalType === "update") {
+                form.updatedBy = user.username ?? "Admin";
                 res = await ipWhitelistServices.changeIpWhitelist(form, editId);
 
                 if (res.status_code == 200) {
-                    alert(res.message)
                     closeModal();
-                    fetchUsers();
+                    fetchIpWhiteList();
                 } else {
-                    alert(res.message)
+                    toast.error(res.data.message)
                 }
             }
 
@@ -76,14 +79,13 @@ export default function IpWhiteList() {
         }
     };
 
-    const deleteUser = async (id) => {
+    const deleteIP = async (id) => {
         setError('');
         setLoading(true);
 
         try {
             await ipWhitelistServices.deleteIpWhitelist(id);
-            toast.success("Xóa người dùng thành công");
-            fetchUsers();
+            fetchIpWhiteList();
         } catch (err) {
             setError('Xóa người dùng thất bại. Vui lòng kiểm tra thông tin.');
         } finally {
@@ -102,26 +104,27 @@ export default function IpWhiteList() {
         const params = {};
 
         if (filters.ip) params.ip = filters.ip;
-        await fetchUsers(params);
+        await fetchIpWhiteList(params);
     }
 
-    const fetchUsers = async (searchParams = {}) => {
+    const fetchIpWhiteList = async (searchParams = {}) => {
         try {
             const params = {
                 page: 1,
                 limit: 10,
+                site: getSiteSystem(),
                 ...searchParams
             };
 
-            const usersData = await ipWhitelistServices.getIpWhitelist(params);
-            setUserWhitelistIp(usersData.data);
+            const IpWhiteListData = await ipWhitelistServices.getIpWhitelist(params);
+            setUserWhitelistIp(IpWhiteListData.data);
         } catch (err) {
-            toast.error("Danh sách người dùng bị lỗi !");
+            toast.error("Danh sách IP bị lỗi !");
         }
     };
 
     useEffect(() => {
-        fetchUsers();
+        fetchIpWhiteList();
     }, []);
 
     return (
@@ -174,7 +177,7 @@ export default function IpWhiteList() {
                                                     Sửa thông tin
                                                 </button>
                                                 <button
-                                                    onClick={() => deleteUser(ip._id)}
+                                                    onClick={() => deleteIP(ip._id)}
                                                     type="button"
                                                     className="focus:outline-none text-white bg-red-700 hover:bg-red-800 focus:ring-4 focus:ring-red-300 font-medium rounded-lg text-sm px-5 py-2.5 me-2 mb-2 dark:bg-red-600 dark:hover:bg-red-700 dark:focus:ring-red-900"
                                                 >

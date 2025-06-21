@@ -29,7 +29,7 @@ const ipWhitelistServices = {
 
         try {
             const res = await UserApi.post("/ip_whitelist", credentials);
-            toast.success("Tạo Ip Whitelist thành công!");
+            toast.success(res.data.message);
             return res.data;
         } catch (error) {
             return handleError(error, "Lỗi khi tạo Ip Whitelist");
@@ -39,7 +39,7 @@ const ipWhitelistServices = {
     changeIpWhitelist: async (credentials, id) => {
         try {
             const res = await UserApi.patch(`/ip_whitelist/${id}`, credentials);
-            toast.success("Đổi mật khẩu thành công!");
+            toast.success(res.data.message);
             return res.data;
         } catch (error) {
             return handleError(error, "Lỗi khi đổi mật khẩu người dùng");
@@ -49,7 +49,7 @@ const ipWhitelistServices = {
     deleteIpWhitelist: async (id) => {
         try {
             const res = await UserApi.delete(`/ip_whitelist/${id}`);
-            toast.success("Xóa Ip Whitelist thành công!");
+            toast.success(res.data.message);
             return res.data;
         } catch (error) {
             return handleError(error, "Lỗi khi xóa Ip Whitelist");

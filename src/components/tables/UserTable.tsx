@@ -15,24 +15,39 @@ import Input from "../form/input/InputField";
 import Label from "../form/Label";
 import { EyeCloseIcon, EyeIcon } from "@/icons";
 import userServices from '@/services/userServices';
+import { useAuth } from "@/context/AuthContext";
+import { getSiteSystem, setSiteSystem } from "@/utils/storage";
+import { information } from '@/utils/info.const';
+
+const initialForm = {
+    ip: '',
+    note: '',
+    site: getSiteSystem(),
+    createdBy: '',
+    updatedBy: ''
+};
 
 export default function UserTable() {
-    const [users, setUsers] = useState([]);
+    const { user } = useAuth();
+    const [data, setData] = useState([]);
     const [currentPage, setCurrentPage] = useState(1);
     const [itemsPerPage, setItemsPerPage] = useState(10);
     const { isOpen, modalType, openModal, closeModal } = useMultiModal();
     const [showPassword, setShowPassword] = useState(false);
-    const [form, setForm] = useState({ username: '', password: '', site: 'F168' });
+    const [form, setForm] = useState(initialForm);
     const [error, setError] = useState('');
     const [loading, setLoading] = useState(false);
     const [editUserId, setEditUserId] = useState(null);
     const [filters, setFilters] = useState({
         username: '',
     });
+    const totalPages = Math.ceil(itemsPerPage / filters.pageSize);
+    const startIndex = (currentPage - 1) * itemsPerPage;
+    const endIndex = startIndex + itemsPerPage;
+    const pagedData = data.slice(startIndex, endIndex);
 
     useEffect(() => {
         if (isOpen) {
-            setForm({ username: '', password: '', site: 'F168' });
             setError('');
         }
     }, [isOpen, modalType]);
@@ -47,26 +62,54 @@ export default function UserTable() {
             if (modalType === "add") {
                 res = await userServices.postUser(form);
                 if (res.status_code == 200) {
-                    alert(res.message)
                     closeModal();
                     fetchUsers();
                 } else {
-                    alert(res.message)
+                    setError(res.message)
                 }
             } else if (modalType === "changePass") {
                 res = await userServices.changePasswordUser(form, editUserId);
 
                 if (res.status_code == 200) {
-                    alert(res.message)
                     closeModal();
                     fetchUsers();
                 } else {
-                    alert(res.message)
+                    setError(res.message)
                 }
             }
 
         } catch (err) {
             setError('Thao tác thất bại. Vui lòng kiểm tra thông tin.');
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const updateUserStatus = async (id) => {
+        setError('');
+        setLoading(true);
+
+        try {
+            await userServices.changeUserStatus(id);
+
+            fetchUsers();
+        } catch (err) {
+            setError('Cập nhật trang thái thất bại.');
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const updateRole = async (id, role) => {
+        setError('');
+        setLoading(true);
+
+        try {
+            await userServices.changeUserRole(id, role);
+
+            fetchUsers();
+        } catch (err) {
+            setError('Cập nhật trang thái thất bại.');
         } finally {
             setLoading(false);
         }
@@ -78,7 +121,7 @@ export default function UserTable() {
 
         try {
             await userServices.deleteUser(id);
-            toast.success("Xóa người dùng thành công");
+            toast.success(userServices.message);
             fetchUsers();
         } catch (err) {
             setError('Xóa người dùng thất bại. Vui lòng kiểm tra thông tin.');
@@ -95,9 +138,15 @@ export default function UserTable() {
     };
 
     const handleSearch = async () => {
-        const params = {};
+        const { username, page, pageSize } = filters;
 
-        if (filters.username) params.username = filters.username;
+        const params = {
+            ...(username && { username }),
+            page,
+            pageSize,
+            site: getSiteSystem()
+        };
+
         await fetchUsers(params);
     }
 
@@ -106,17 +155,22 @@ export default function UserTable() {
             const params = {
                 page: 1,
                 limit: 10,
+                site: getSiteSystem(),
                 ...searchParams
             };
 
             const usersData = await userServices.getUser(params);
-            setUsers(usersData.users);
+            setData(usersData.users);
             setCurrentPage(usersData.page);
             setItemsPerPage(usersData.total);
         } catch (err) {
             toast.error("Danh sách người dùng bị lỗi !");
         }
     };
+
+    useEffect(() => {
+        handleSearch();
+    }, [filters]);
 
     useEffect(() => {
         fetchUsers();
@@ -134,13 +188,13 @@ export default function UserTable() {
                                     <path stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 5v10M3 5a2 2 0 1 0 0-4 2 2 0 0 0 0 4Zm0 10a2 2 0 1 0 0 4 2 2 0 0 0 0-4Zm12 0a2 2 0 1 0 0 4 2 2 0 0 0 0-4Zm0 0V6a3 3 0 0 0-3-3H9m1.5-2-2 2 2 2" />
                                 </svg>
                             </div>
-                            <input 
+                            <input
                                 value={filters.username}
-                                onChange={(e) => setFilters({...filters, username: e.target.value})}
-                                type="text" id="simple-search" 
+                                onChange={(e) => setFilters({ ...filters, username: e.target.value })}
+                                type="text" id="simple-search"
                                 className="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full ps-10 p-2.5  dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500" placeholder="Search username..." required />
                         </div>
-                        <button 
+                        <button
                             onClick={(e) => { e.preventDefault(); handleSearch(); }}
                             type="submit" className="p-2.5 ms-2 text-sm font-medium text-white bg-blue-700 rounded-lg border border-blue-700 hover:bg-blue-800 focus:ring-4 focus:outline-none focus:ring-blue-300 dark:bg-blue-600 dark:hover:bg-blue-700 dark:focus:ring-blue-800">
                             <svg className="w-4 h-4" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 20 20">
@@ -177,13 +231,36 @@ export default function UserTable() {
                             </TableHeader>
 
                             <TableBody className="divide-y divide-gray-100 dark:divide-white/[0.05]">
-                                {users.map((user, index) => (
+                                {pagedData.map((user, index) => (
                                     <TableRow key={index}>
                                         <TableCell className="px-5 py-4 sm:px-6 text-start">{(currentPage - 1) * itemsPerPage + index + 1}</TableCell>
                                         <TableCell className="px-4 py-3 text-gray-500 text-start text-theme-sm dark:text-gray-400">{user.username}</TableCell>
                                         <TableCell className="px-4 py-3 text-gray-500 text-start text-theme-sm dark:text-gray-400">{user.site}</TableCell>
-                                        <TableCell className="px-4 py-3 text-gray-500 text-start text-theme-sm dark:text-gray-400">{user.role}</TableCell>
-                                        <TableCell className="px-4 py-3 text-gray-500 text-theme-sm dark:text-gray-400">{user.status ? "Hoạt động" : "Tạm ngừng"}</TableCell>
+                                        <TableCell className="px-4 py-3 text-gray-500 text-start text-theme-sm dark:text-gray-400">
+                                            <select
+                                                name="role"
+                                                className={`h-11 w-auto appearance-none rounded-lg border border-gray-300  px-4 py-2.5 pr-11 text-sm shadow-theme-xs placeholder:text-gray-400`}
+                                                value={user.role}
+                                                onChange={(e) => updateRole(user._id, e.target.value)}
+                                            >
+                                                <option value="">-- Phân quyền --</option>
+                                                {Object.entries(information.role).map(([key, label]) => (
+                                                    <option key={key} value={key} selected={form.key === user.role}>
+                                                        {label}
+                                                    </option>
+                                                ))}
+                                            </select>
+                                        </TableCell>
+                                        <TableCell className="px-4 py-3 text-gray-500 text-theme-sm dark:text-gray-400 text-center">
+                                            {user.status ? "Hoạt động" : "Tạm ngừng"} <br />
+                                            <button
+                                                onClick={() => updateUserStatus(user._id)}
+                                                type="button"
+                                                className="focus:outline-none text-white bg-green-700 font-medium rounded-lg text-sm px-5 py-2.5 me-2 mb-2"
+                                            >
+                                                Update
+                                            </button>
+                                        </TableCell>
                                         <TableCell className="px-4 py-3 text-gray-500 text-start text-theme-sm dark:text-gray-400">{new Date(user.createdAt).toLocaleDateString("vi-VN", { timeZone: 'UTC' })}</TableCell>
                                         <TableCell className="px-4 py-3 text-gray-500 text-theme-sm dark:text-gray-400">{new Date(user.updatedAt).toLocaleDateString("vi-VN", { timeZone: 'UTC' })}</TableCell>
                                         <TableCell className="px-4 py-3 text-gray-500 text-theme-sm dark:text-gray-400">
@@ -210,6 +287,66 @@ export default function UserTable() {
                                 ))}
                             </TableBody>
                         </Table>
+                        <div className="flex items-center justify-between p-5">
+                            <select
+                                name="pageSize"
+                                value={filters.pageSize}
+                                onChange={(e) => {
+                                    const newPageSize = e.target.value;
+                                    setFilters((prev) => ({ ...prev, pageSize: newPageSize, page: 1 }));
+                                }}
+                                className="h-10 w-30 appearance-none rounded-lg border border-gray-300 px-4 py-1"
+                            >
+                                <option value="10">10 / page</option>
+                                <option value="20">20 / page</option>
+                                <option value="50">50 / page</option>
+                                <option value="100">100 / page</option>
+                            </select>
+
+                            <div className="flex items-center gap-2 mt-4">
+                                <button
+                                    onClick={() =>
+                                        setFilters((prev) => ({
+                                            ...prev,
+                                            page: Math.max(prev.page - 1, 1),
+                                        }))
+                                    }
+                                    disabled={filters.page === 1}
+                                    className="px-3 py-1 border rounded disabled:opacity-50"
+                                >
+                                    ← Trước
+                                </button>
+
+                                {Array.from({ length: totalPages }, (_, i) => (
+                                    <button
+                                        key={i}
+                                        onClick={() =>
+                                            setFilters((prev) => ({
+                                                ...prev,
+                                                page: i + 1,
+                                            }))
+                                        }
+                                        className={`px-3 py-1 border rounded ${filters.page === i + 1 ? "bg-blue-500 text-white" : ""
+                                            }`}
+                                    >
+                                        {i + 1}
+                                    </button>
+                                ))}
+
+                                <button
+                                    onClick={() =>
+                                        setFilters((prev) => ({
+                                            ...prev,
+                                            page: Math.min(prev.page + 1, totalPages),
+                                        }))
+                                    }
+                                    disabled={filters.page === totalPages}
+                                    className="px-3 py-1 border rounded disabled:opacity-50"
+                                >
+                                    Sau →
+                                </button>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -269,6 +406,33 @@ export default function UserTable() {
                                     {showPassword ? <EyeIcon className="fill-gray-500 dark:fill-gray-400" /> : <EyeCloseIcon className="fill-gray-500 dark:fill-gray-400" />}
                                 </span>
                             </div>
+                            <br />
+
+
+                            {modalType === "add" && (
+                                <>
+                                    <Label>
+                                        System <span className="text-error-500">*</span>{" "}
+                                    </Label>
+                                    <div className="relative">
+                                        <select
+                                            name="site"
+                                            className={`h-11 w-full appearance-none rounded-lg border border-gray-300  px-4 py-2.5 pr-11 text-sm shadow-theme-xs placeholder:text-gray-400 focus:border-brand-300 focus:outline-hidden focus:ring-3 focus:ring-brand-500/10 dark:border-gray-700 dark:bg-gray-900 dark:text-white/90 dark:placeholder:text-white/30 dark:focus:border-brand-800`}
+                                            value={form.site}
+                                            onChange={(e) => handleChange(e)}
+                                        >
+                                            <option value="">-- Chọn hệ thống --</option>
+                                            {Object.entries(information.system).map(([key, label]) => (
+                                                <option key={key} value={label}>
+                                                    {label}
+                                                </option>
+                                            ))}
+
+                                        </select>
+                                    </div>
+                                </>
+                            )}
+
                             {error && <p className="mt-2 text-sm text-red-500">{error}</p>}
                         </div>
 

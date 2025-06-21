@@ -6,9 +6,11 @@ import Button from "../ui/button/Button";
 import Input from "../form/input/InputField";
 import Label from "../form/Label";
 import settingWebServices from '@/services/settingWebServices';
+import { getSiteSystem, setSiteSystem } from "@/utils/storage";
+import { useAuth } from "@/context/AuthContext";
 
 const initialForm = {
-    site: 'F168',
+    site: getSiteSystem(),
     time_zone: '',
     created_by: '',
     site_active: true,
@@ -25,11 +27,11 @@ const initialForm = {
     banner: '',
     sub_banner: '',
     notification: '',
-    created_by: 'Admin'
+    update_by: '' 
 };
 
 export default function SettingWebTable() {
-    const [settingSite, setSettingSite] = useState([]);
+    const { user } = useAuth();
     const { isOpen, modalType, openModal, closeModal } = useMultiModal();
     const [form, setForm] = useState(initialForm);
     const [error, setError] = useState('');
@@ -45,32 +47,20 @@ export default function SettingWebTable() {
         }
     }, [isOpen, modalType]);
 
-    const handleSave = async (e) => {
+    const handleAdd = async (e) => {
         e.preventDefault();
         setError('');
         setLoading(true);
 
         try {
             let res;
-
+            form.created_by = user.username ?? "Admin";
             res = await settingWebServices.postSetting(form);
             if (res.status_code == 200) {
-                alert(res.message)
-                fetchSettingWeb("F168");
+                fetchSettingWeb(getSiteSystem());
             } else {
                 alert(res.message)
             }
-            // } else if (modalType === "update") {
-            //     res = await settingWebServices.update(form, editUserId);
-
-            //     if (res.status_code == 200) {
-            //         alert(res.message)
-            //         closeModal();
-            //         fetchUsers();
-            //     } else {
-            //         alert(res.message)
-            //     }
-            // }
 
         } catch (err) {
             setError('Thao tác thất bại. Vui lòng kiểm tra thông tin.');
@@ -79,17 +69,31 @@ export default function SettingWebTable() {
         }
     };
 
-    const deleteSetting = async (site) => {
+    const handleUpdate = async (e) => {
+        e.preventDefault();
         setError('');
 
         try {
+            let res;
+            form.updated_by = user.username ?? "Admin";
+            res = await settingWebServices.update(form, getSiteSystem());
+
+            if (res.status_code == 200) {
+                fetchSettingWeb(getSiteSystem());
+            } else {
+                toast.error(res.message)
+            }
+        } catch (err) {
+            setError('Thao tác thất bại. Vui lòng kiểm tra thông tin.');
+        }
+    };
+
+    const deleteSetting = async (site) => {
+        try {
             await settingWebServices.delete(site);
-            toast.success("Xóa người dùng thành công");
-            fetchSettingWeb("F168");
+            fetchSettingWeb(getSiteSystem());
         } catch (err) {
             setError('Xóa người dùng thất bại. Vui lòng kiểm tra thông tin.');
-        } finally {
-            setLoading(false);
         }
     };
 
@@ -119,7 +123,7 @@ export default function SettingWebTable() {
 
 
     useEffect(() => {
-        fetchSettingWeb("F168");
+        fetchSettingWeb(getSiteSystem());
     }, []);
 
     return (
@@ -148,8 +152,6 @@ export default function SettingWebTable() {
                                     />
                                 </div>
 
-                                {console.log(form.time_zone)}
-
                                 <div className="col-md-5">
                                     <Label>Bảo trì / Hoạt động</Label>
                                     <Label className="inline-flex items-center">
@@ -157,6 +159,7 @@ export default function SettingWebTable() {
                                             type="checkbox"
                                             name="site_active"
                                             className="sr-only peer"
+                                            checked={form.site_active}
                                             value={form.site_active}
                                             onChange={handleChange}
                                         />
@@ -328,6 +331,7 @@ export default function SettingWebTable() {
                                 <Label>Thông báo</Label>
                                 <div className="relative">
                                     <textarea name="notification"
+                                        value={form.notification || ""}
                                         id="notification"
                                         rows={3}
                                         onChange={handleChange}
@@ -344,19 +348,18 @@ export default function SettingWebTable() {
                             <Button size="sm" variant="outline" onClick={() => deleteSetting(form.site ?? '')}>
                                 Xóa thiết lập
                             </Button>
-                            <Button size="sm" onClick={handleSave}>
-                                {loading ? 'Đang xử lý...' : 'Lưu thông tin'}
-                            </Button>
+
+                            {form._id ? (
+                                <Button size="sm" onClick={handleUpdate}>
+                                    {loading ? 'Đang xử lý...' : 'Sửa thông tin'}
+                                </Button>
+                            ) : (
+                                <Button size="sm" onClick={handleAdd}>
+                                    {loading ? 'Đang xử lý...' : 'Lưu thông tin'}
+                                </Button>
+                            )}
                         </div>
                     </form>
-
-
-                </div>
-
-                <div className="max-w-full overflow-x-auto">
-                    <div className="min-w-[1102px]">
-
-                    </div>
                 </div>
             </div>
 

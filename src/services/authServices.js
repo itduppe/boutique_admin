@@ -5,9 +5,10 @@ const authServices = {
   login: async (credentials) => {
     try {
       const res = await UserApi.post('/auth/login', credentials);
+
       return res.data;
     } catch (error) {
-      console.error('Lỗi login:', error);
+      toast.error("Vui lòng liên hệ quản trị viên Website");
       throw error;
     }
   },

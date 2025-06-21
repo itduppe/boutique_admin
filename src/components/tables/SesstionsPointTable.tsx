@@ -16,6 +16,17 @@ import Label from "../form/Label";
 import sessionPointServices from '@/services/sessionPointServices';
 import TextArea from "../form/input/TextArea";
 import { useAuth } from "@/context/AuthContext";
+import DatePicker from "react-datepicker";
+import "react-datepicker/dist/react-datepicker.css";
+import { getSiteSystem, setSiteSystem } from "@/utils/storage";
+
+const initialForm = {
+    site: getSiteSystem(),
+    start_timestamp: 0,
+    end_timestamp: 0,
+    created_by: '',
+    updated_by: '',
+};
 
 export default function SesstionsPointTable() {
     const [data, setData] = useState([]);
@@ -23,24 +34,13 @@ export default function SesstionsPointTable() {
     const [currentPage, setCurrentPage] = useState(1);
     const [itemsPerPage, setItemsPerPage] = useState(10);
     const { isOpen, modalType, openModal, closeModal } = useMultiModal();
-    const [form, setForm] = useState({});
+    const [form, setForm] = useState(initialForm);
     const [error, setError] = useState('');
     const [loading, setLoading] = useState(false);
     const [editSessionId, setEditSessionId] = useState(null);
-    const [filters, setFilters] = useState({
-        username: '',
-    });
 
     useEffect(() => {
         if (isOpen) {
-            setForm({
-                site: 'F168',
-                start_timestamp: 0,
-                end_timestamp: 0,
-                created_by: user?.username,
-                updated_by: user?.username
-            });
-
             setError('');
         }
     }, [isOpen, modalType]);
@@ -52,27 +52,27 @@ export default function SesstionsPointTable() {
 
         try {
             let res;
+            form.created_by = user.username ?? "Admin";
             if (modalType === "add") {
                 res = await sessionPointServices.postSession(form);
                 if (res.status_code == 200) {
-                    alert(res.message)
+                    alert(res.message);
                     closeModal();
                     fetchSesstionsPoint();
                 } else {
-                    alert(res.message)
+                    alert(res.message);
                 }
             } else if (modalType === "update") {
+                form.updated_by = user.username ?? "Admin";
                 res = await sessionPointServices.updateSession(form, editSessionId);
-
                 if (res.status_code == 200) {
-                    alert(res.message)
+                    alert(res.message);
                     closeModal();
                     fetchSesstionsPoint();
                 } else {
-                    alert(res.message)
+                    alert(res.message);
                 }
             }
-
         } catch (err) {
             setError('Thao tác thất bại. Vui lòng kiểm tra thông tin.');
         } finally {
@@ -95,12 +95,11 @@ export default function SesstionsPointTable() {
         }
     };
 
-    const handleChange = (e) => {
-        const { name, value } = e.target;
-
-        setForm((prev) => ({
+    const handleDateChange = (date, name) => {
+        const timestamp = date ? date.getTime() : 0;
+        setForm(prev => ({
             ...prev,
-            [name]: name === 'location' ? parseInt(value) : value,
+            [name]: timestamp
         }));
     };
 
@@ -109,7 +108,7 @@ export default function SesstionsPointTable() {
             const params = {
                 page: 1,
                 limit: 10,
-                site: 'F168',
+                site: getSiteSystem(),
                 ...searchParams
             };
 
@@ -125,17 +124,34 @@ export default function SesstionsPointTable() {
     const fetchSesstionId = async (id) => {
         try {
             const sessionPoint = await sessionPointServices.getById(id);
+
+            const formattedStartTimestamp = formatTimestamp(sessionPoint.data.start_timestamp);
+            const formattedEndTimestamp = formatTimestamp(sessionPoint.data.end_timestamp);
             setForm(prev => ({
                 ...prev,
                 ...sessionPoint.data,
-                updated_by: sessionPoint.data.updated_by ?? "ADMIN",
+                // start_timestamp: formattedStartTimestamp,
+                // end_timestamp: formattedEndTimestamp,
+                updated_by: user?.username ?? "ADMIN",
             }));
 
             setTimeout(() => openModal("update"), 200);
         } catch (err) {
             console.error("Lỗi lấy dữ liệu review", err);
         }
-    }
+    };
+
+    const formatTimestamp = (timestamp) => {
+        if (!timestamp) return '';
+        return new Intl.DateTimeFormat('vi-VN', {
+            day: '2-digit',
+            month: '2-digit',
+            year: 'numeric',
+            hour: '2-digit',
+            minute: '2-digit',
+            second: '2-digit',
+        }).format(new Date(timestamp));
+    };
 
     useEffect(() => {
         if (editSessionId) {
@@ -156,7 +172,7 @@ export default function SesstionsPointTable() {
                         type="button"
                         className="focus:outline-none text-white bg-green-700 hover:bg-green-800 focus:ring-4 focus:ring-green-300 font-medium rounded-lg text-sm px-5 py-2.5 me-2 mb-2 dark:bg-green-600 dark:hover:bg-green-700 dark:focus:ring-green-800"
                     >
-                        Thêm bình luận
+                        Thêm Mốc Sự Kiện
                     </button>
                 </div>
 
@@ -181,13 +197,10 @@ export default function SesstionsPointTable() {
                                 {data.map((sesstionsPoint, index) => (
                                     <TableRow key={index}>
                                         <TableCell className="px-5 py-4 sm:px-6 text-start">{index + 1}</TableCell>
-                                        <TableCell className="px-4 py-3 text-gray-500 text-start text-theme-sm dark:text-gray-400">{sesstionsPoint.start_timestamp}</TableCell>
-                                        <TableCell className="px-4 py-3 text-gray-500 text-start text-theme-sm dark:text-gray-400">{sesstionsPoint.end_timestamp}</TableCell>
+                                        <TableCell className="px-4 py-3 text-gray-500 text-start text-theme-sm dark:text-gray-400"> {formatTimestamp(sesstionsPoint.start_timestamp)}</TableCell>
+                                        <TableCell className="px-4 py-3 text-gray-500 text-start text-theme-sm dark:text-gray-400">{formatTimestamp(sesstionsPoint.end_timestamp)}</TableCell>
                                         <TableCell className="px-4 py-3 text-gray-500 text-start text-theme-sm dark:text-gray-400">{sesstionsPoint.created_by}</TableCell>
                                         <TableCell className="px-4 py-3 text-gray-500 text-start text-theme-sm dark:text-gray-400">{sesstionsPoint.updated_by}</TableCell>
-                                      
-                                        {/* <TableCell className="px-4 py-3 text-gray-500 text-start text-theme-sm dark:text-gray-400">{new Date(review.createdAt).toLocaleDateString("vi-VN", { timeZone: 'UTC' })}</TableCell>
-                                        <TableCell className="px-4 py-3 text-gray-500 text-theme-sm dark:text-gray-400">{new Date(review.updatedAt).toLocaleDateString("vi-VN", { timeZone: 'UTC' })}</TableCell> */}
                                         <TableCell className="px-4 py-3 text-gray-500 text-theme-sm dark:text-gray-400">
                                             <div className="flex justify-center gap-2">
                                                 <button
@@ -228,23 +241,27 @@ export default function SesstionsPointTable() {
                     <form className="flex flex-col">
                         <div className="custom-scrollbar h-[450px] overflow-y-auto pt-5 px-2 pb-3">
                             <>
+                                {/* Thời gian bắt đầu */}
                                 <Label>Thời gian bắt đầu</Label>
-                                <Input
-                                    type="text"
-                                    placeholder="Tên tài khoản"
-                                    value={form.start_timestamp}
-                                    name="start_timestamp"
-                                    onChange={handleChange}
+                                <DatePicker
+                                    selected={form.start_timestamp ? new Date(form.start_timestamp) : null}
+                                    onChange={(date) => handleDateChange(date, "start_timestamp")}
+                                    showTimeSelect
+                                    dateFormat="Pp"
+                                    className="border p-2 rounded w-full lg:min-w-[600px]"
+                                    placeholderText="Chọn thời gian bắt đầu"
                                 />
                                 <br />
 
-                                <Label>Tên hiển thị</Label>
-                                <Input
-                                    type="text"
-                                    placeholder="Tên hiển thị"
-                                    value={form.end_timestamp}
-                                    name="end_timestamp"
-                                    onChange={handleChange}
+                                {/* Thời gian kết thúc */}
+                                <Label>Thời gian kết thúc</Label>
+                                <DatePicker
+                                    selected={form.end_timestamp ? new Date(form.end_timestamp) : null}
+                                    onChange={(date) => handleDateChange(date, "end_timestamp")}
+                                    showTimeSelect
+                                    dateFormat="Pp"
+                                    className="border p-2 rounded w-full lg:min-w-[600px]"
+                                    placeholderText="Chọn thời gian kết thúc"
                                 />
                                 <br />
                             </>

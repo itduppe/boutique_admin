@@ -20,29 +20,30 @@ const settingServices = {
     postSetting: async (credentials) => {
         try {
             const res = await UserApi.post("/settings", credentials);
-            toast.success("Tạo thiết lập website thành công!");
+            toast.success(res.data.message);
             return res.data;
         } catch (error) {
             return handleError(error, "Lỗi khi tạo thiết lập website");
         }
     },
 
-    update: async (credentials, id) => {
+    update: async (credentials, site) => {
         try {
-            const res = await UserApi.patch(`/settings/${id}`, credentials);
-            toast.success("Đổi thông tin thành công!");
+            const res = await UserApi.patch(`/settings/${site}`, credentials);
+            toast.success(res.data.message);
             return res.data;
         } catch (error) {
             return handleError(error, "Lỗi khi đổi thông tin");
         }
     },
 
-    delete: async (id) => {
+    delete: async (site) => {
         try {
-            const res = await UserApi.delete(`/settings/${id}`);
-            toast.success("Xóa thiết lập website thành công!");
+            const res = await UserApi.delete(`/settings/${site}`);
+            toast.success(res.data.message);
             return res.data;
         } catch (error) {
+            console.error("Lỗi xóa:", error.response?.data || error.message);
             return handleError(error, "Lỗi khi xóa thiết lập website");
         }
     },

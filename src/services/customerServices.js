@@ -29,7 +29,7 @@ const customerServices = {
     updateStatus: async (username, site) => {
         try {
             const res = await UserApi.patch(`/customers/update-status?username=${username}&site=${site}`);
-            toast.success("Đổi mật khẩu thành công!");
+            toast.success(res.data.message);
             return res.data;
         } catch (error) {
             return handleError(error, "Lỗi khi đổi mật khẩu người dùng");
@@ -39,7 +39,7 @@ const customerServices = {
     findHistories: async (username, site) => {
         try {
             const res = await UserApi.patch(`/customers/find-histories?username=${username}&site=${site}`);
-            toast.success("Đổi mật khẩu thành công!");
+            toast.success(res.data.message);
             return res.data;
         } catch (error) {
             return handleError(error, "Lỗi khi đổi mật khẩu người dùng");

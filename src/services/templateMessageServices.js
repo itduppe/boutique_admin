@@ -46,13 +46,8 @@ const templateMessageServices = {
         }
     },
 
-    update: async (form, id) => {
+    update: async (credentials, id) => {
         try {
-            let credentials = {
-                oldPassword: form.oldPassword,
-                newPassword: form.password
-            };
-
             const res = await UserApi.patch(`/messages/${id}`, credentials);
             toast.success("Đổi thông tin thành công!");
             return res.data;

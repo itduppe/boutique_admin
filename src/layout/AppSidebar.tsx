@@ -267,19 +267,16 @@ const AppSidebar: React.FC = () => {
           {isExpanded || isHovered || isMobileOpen ? (
             <div className="flex gap-2 items-center">
               <div>ATT - ADMIN</div>
-              <select
+              {/* <select
                 name="site"
                 className={`h-11 w-20 appearance-none p-1 rounded-lg border border-gray-300 text-sm shadow-theme-xs placeholder:text-gray-400 focus:border-brand-300 focus:outline-hidden focus:ring-3 focus:ring-brand-500/10 dark:border-gray-700 dark:bg-gray-900 dark:text-white/90 dark:placeholder:text-white/30 dark:focus:border-brand-800`}
-                // value={form.site}
-                // onChange={(e) => handleChangeSelectSystem(e, e.target.value)}
               >
                 {Object.entries(information.system).map(([key, label]) => (
                   <option key={key} value={label}>
                     {label}
                   </option>
                 ))}
-              </select>
-
+              </select> */}
               <Image
                 src="/images/logo/logo-icon.svg"
                 alt="Logo"
@@ -296,23 +293,6 @@ const AppSidebar: React.FC = () => {
             />
           )}
         </div>
-
-        {/* <select
-          value={selectedCountry}
-          onChange={handleCountryChange}
-          className="appearance-none bg-none rounded-l-lg border-0 border-r border-gray-200 bg-transparent py-3 pl-3.5 pr-8 leading-tight text-gray-700 focus:border-brand-300 focus:outline-hidden focus:ring-3 focus:ring-brand-500/10 dark:border-gray-800 dark:text-gray-400"
-        >
-          {countries.map((country) => (
-            <option
-              key={country.code}
-              value={country.code}
-              className="text-gray-700 dark:bg-gray-900 dark:text-gray-400"
-            >
-              {country.code}
-            </option>
-          ))}
-        </select> */}
-
       </div>
       <div className="flex flex-col overflow-y-auto duration-300 ease-linear no-scrollbar">
         <nav className="mb-6">

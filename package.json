@@ -14,6 +14,9 @@
     "cookies-next": "^6.0.0",
     "crypto-js": "^4.2.0",
     "date-fns": "^4.1.0",
+    "draft-js": "^0.11.7",
+    "draftjs-to-html": "^0.9.1",
+    "flatpickr": "^4.6.13",
     "jsonwebtoken": "^9.0.2",
     "jwt-decode": "^4.0.0",
     "lodash": "^4.17.21",
@@ -21,6 +24,8 @@
     "react": "^19.0.0",
     "react-datepicker": "^8.4.0",
     "react-dom": "^19.0.0",
+    "react-draft-wysiwyg": "^1.15.0",
+    "react-quill": "^2.0.0",
     "react-toastify": "^11.0.5",
     "tailwind-merge": "^3.3.0"
   },

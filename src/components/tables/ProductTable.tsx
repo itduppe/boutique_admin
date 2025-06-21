@@ -16,12 +16,17 @@ import Label from "../form/Label";
 import _ from 'lodash';
 import productServices from '@/services/productServices';
 import { information } from '@/utils/info.const';
+import { setNestedValue } from '@/utils/object';
 import DatePicker from "react-datepicker";
+import Checkbox from "../form/input/Checkbox";
+import ReactQuillEditor from "../form/input/ReactQuillEditor";
 import "react-datepicker/dist/react-datepicker.css";
 import { useAuth } from "@/context/AuthContext";
+import { getSiteSystem, setSiteSystem } from "@/utils/storage";
+import Switch from "../form/switch/Switch";
 
 const initialForm = {
-    site: '',
+    site: getSiteSystem(),
     product_id: '',
     product_tag: 'in_stock',
     product_type: 'fashion',
@@ -69,7 +74,6 @@ export default function ProductTable() {
     const { user } = useAuth();
     const [currentPage, setCurrentPage] = useState(1);
     const [itemsPerPage, setItemsPerPage] = useState(10);
-    const totalPages = Math.ceil(data.length / itemsPerPage);
     const { isOpen, modalType, openModal, closeModal } = useMultiModal();
     const [form, setForm] = useState(initialForm);
     const [error, setError] = useState('');
@@ -78,7 +82,7 @@ export default function ProductTable() {
     const [filters, setFilters] = useState({
         page: 1,
         pageSize: 10,
-        site: user?.site,
+        site: getSiteSystem(),
         product_id: '',
         product_type: '',
         name: '',
@@ -87,9 +91,14 @@ export default function ProductTable() {
         status: true
     });
     const [endDateDonate, setEndDateDonate] = useState(new Date());
+    const totalPages = Math.ceil(itemsPerPage / filters.pageSize);
     const startIndex = (currentPage - 1) * itemsPerPage;
     const endIndex = startIndex + itemsPerPage;
     const pagedData = data.slice(startIndex, endIndex);
+    const editor = useEditor({
+        extensions: [StarterKit],
+        content: '<p>Hello World! 🌎️</p>',
+    })
 
     useEffect(() => {
         if (editProductId) {
@@ -124,26 +133,25 @@ export default function ProductTable() {
         try {
             let res;
 
-            alert(JSON.stringify(user));
-            form.site = user?.site;
-
             if (modalType === "add") {
                 form.created_by = user.username ?? "Admin";
                 res = await productServices.postProduct(form);
+
+                if (res.status_code != 200) {
+                    toast.error(res.message)
+                }
             }
             else
                 if (modalType === "update") {
                     form.updated_by = user.username ?? "Admin";
                     res = await productServices.update(form, editProductId);
 
-                    if (res.status_code == 200) {
-                        alert(res.message)
-                        closeModal();
-                        fetchProducts();
-                    } else {
-                        alert(res.message)
-                    }
+                    if (res.status_code != 200)
+                        toast.error(res.message)
                 }
+
+            closeModal();
+            fetchProducts();
 
         } catch (err) {
             setError('Thao tác thất bại. Vui lòng kiểm tra thông tin.');
@@ -158,7 +166,6 @@ export default function ProductTable() {
 
         try {
             await productServices.delete(id);
-            toast.success("Xóa bình luận thành công");
             fetchProducts();
         } catch (err) {
             setError('Xóa bình luận thất bại. Vui lòng kiểm tra thông tin.');
@@ -187,7 +194,7 @@ export default function ProductTable() {
 
         if (name === "image_details") {
             const urls = value
-                .split(',')
+                .split('|')
                 .map((v) => v.trim())
                 .filter((v) => v.length > 0);
 
@@ -212,6 +219,12 @@ export default function ProductTable() {
                 [name]: autoCastValue(name, finalValue)
             }));
         }
+    };
+
+    const handleDateChange = (date, name) => {
+        const timestamp = date ? date.getTime() : 0;
+
+        setForm(prev => setNestedValue(prev, name, timestamp));
     };
 
     const handleDetailChange = (index, field, value) => {
@@ -250,7 +263,7 @@ export default function ProductTable() {
             'condition_donate.money',
             'condition_donate.max_money',
             'conditions.take_after_day',
-            'conditions.total_bet',
+            // 'conditions.total_bet',
             'conditions.total_deposit',
             'conditions.times_deposit',
             'conditions.level_vip',
@@ -269,25 +282,16 @@ export default function ProductTable() {
 
     const handleSearch = async () => {
         const { product_id, name, product_type, product_tag, created_by, status, page, pageSize, site } = filters;
-
-        // Xử lý status thành số
-        let statusNumber = '';
-        if (status === true || status === 'true' || status === 1 || status === '1') {
-            statusNumber = 1;
-        } else if (status === false || status === 'false' || status === 0 || status === '0') {
-            statusNumber = 0;
-        }
-
         const params = {
             ...(product_id && { product_id }),
             ...(name && { name }),
             ...(product_type && { product_type }),
             ...(product_tag && { product_tag }),
             ...(created_by && { created_by }),
-            ...(status !== '' && { status: statusNumber }), // ✅ Gửi dạng số
+            ...(status && { status }),
             page,
             pageSize,
-            site: user?.site
+            site: getSiteSystem()
         };
 
         await fetchProducts(params);
@@ -297,7 +301,7 @@ export default function ProductTable() {
         try {
             const params = {
                 page: 1,
-                site: 'F168',
+                ...(getSiteSystem() && { site: getSiteSystem() }),
                 ...searchParams
             };
 
@@ -332,18 +336,31 @@ export default function ProductTable() {
     }, [editProductId]);
 
     useEffect(() => {
+        handleSearch();
+    }, [filters]);
+
+    useEffect(() => {
         fetchProducts();
     }, []);
 
     return (
         <>
             <div className="overflow-hidden rounded-xl border border-gray-200 bg-white dark:border-white/[0.05] dark:bg-white/[0.03]">
-                <div className="m-5 flex justify-between">
-                    <div className="flex items-center max-w-sm">
-                        <div className="pb-10">
-                            <div className="flex w-[700px] gap-5 mb-4">
-                                {/* Mã sản phẩm */}
-                                <div className="w-[31%]">
+                <div className="m-5">
+                    <div className="w-full flex justify-end">
+                        <button
+                            onClick={() => openModal("add")}
+                            type="button"
+                            className="h-11 focus:outline-none text-white bg-green-700 hover:bg-green-800 focus:ring-4 focus:ring-green-300 font-medium rounded-lg text-sm px-5 py-2.5 me-2 mb-2 dark:bg-green-600 dark:hover:bg-green-700 dark:focus:ring-green-800"
+                        >
+                            Thêm sản phẩm
+                        </button>
+                    </div>
+
+                    <div className="m-5 flex justify-between">
+                        <div className="w-full pb-10">
+                            <div className="flex flex-wrap gap-5 mb-4">
+                                <div className="w-[18.6%]">
                                     <label htmlFor="search_product_id" className="sr-only">Mã sản phẩm</label>
                                     <div className="relative w-full">
                                         <input
@@ -358,12 +375,11 @@ export default function ProductTable() {
                                     </div>
                                 </div>
 
-                                {/* Tên sản phẩm */}
-                                <div className="w-[31%]">
-                                    <label htmlFor="name" className="sr-only">Tên sản phẩm</label>
+                                <div className="w-[18.6%]">
+                                    <label htmlFor="search_name" className="sr-only">Tên sản phẩm</label>
                                     <div className="relative w-full">
                                         <input
-                                            id="name"
+                                            id="search_name"
                                             name="search_name"
                                             type="text"
                                             value={filters.name}
@@ -374,8 +390,7 @@ export default function ProductTable() {
                                     </div>
                                 </div>
 
-                                {/* Người tạo */}
-                                <div className="w-[31%]">
+                                <div className="w-[18.6%]">
                                     <label htmlFor="created_by" className="sr-only">Người tạo</label>
                                     <div className="relative w-full">
                                         <select
@@ -386,16 +401,15 @@ export default function ProductTable() {
                                             className="h-11 w-full appearance-none rounded-lg border border-gray-300 px-4 py-2.5 pr-11"
                                         >
                                             <option value="">-- Người tạo --</option>
-                                            <option value="user">Nhân viên</option>
-                                            <option value="admin">Quản lý</option>
+                                            {Object.entries(information.role).map(([key, label]) => (
+                                                <option key={key} value={key}>{label}</option>
+                                            ))}
                                         </select>
                                     </div>
                                 </div>
-                            </div>
 
-                            <div className="flex w-[700px] gap-5">
                                 {/* Trạng thái sản phẩm */}
-                                <div className="w-[31%]">
+                                <div className="w-[18.6%]">
                                     <label htmlFor="product_tag" className="sr-only">Trạng thái sản phẩm</label>
                                     <div className="relative w-full">
                                         <select
@@ -413,8 +427,7 @@ export default function ProductTable() {
                                     </div>
                                 </div>
 
-                                {/* Kiểu sản phẩm */}
-                                <div className="w-[31%]">
+                                <div className="w-[18.6%]">
                                     <label htmlFor="product_type" className="sr-only">Kiểu sản phẩm</label>
                                     <div className="relative w-full">
                                         <select
@@ -432,47 +445,47 @@ export default function ProductTable() {
                                     </div>
                                 </div>
 
-                                {/* Trạng thái hiển thị */}
-                                <div className="w-[31%]">
+                                <div className="w-[18.6%]">
                                     <label htmlFor="status" className="sr-only">Trạng thái hiển thị</label>
                                     <div className="relative w-full">
                                         <select
                                             id="status"
                                             name="status"
-                                            value={filters.status}
-                                            onChange={(e) => setFilters({ ...filters, status: e.target.value === "true" })}
+                                            value={filters.status === '' ? '' : filters.status ? 'true' : 'false'}
+                                            onChange={(e) => {
+                                                const value = e.target.value;
+                                                setFilters({
+                                                    ...filters,
+                                                    status: value === '' ? '' : value === 'true'
+                                                        ? true
+                                                        : false
+                                                });
+                                            }}
                                             className="h-11 w-full appearance-none rounded-lg border border-gray-300 px-4 py-2.5 pr-11"
                                         >
                                             <option value="">-- Chọn trạng thái --</option>
-                                            <option value="0">Hiển Thị Website</option>
-                                            <option value="1">Ẩn khỏi Website</option>
+                                            <option value="true">Hiển Thị Website</option>
+                                            <option value="false">Ẩn khỏi Website</option>
                                         </select>
                                     </div>
+                                </div>
+
+                                <div className="w-[18.6%]">
+                                    <button
+                                        onClick={(e) => { e.preventDefault(); handleSearch(); }}
+                                        type="submit"
+                                        className="h-auto p-2.5 ms-2 text-sm font-medium text-white bg-blue-700 rounded-lg border border-blue-700 hover:bg-blue-800"
+                                    >
+                                        <svg className="w-4 h-4" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 20 20">
+                                            <path stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="m19 19-4-4m0-7A7 7 0 1 1 1 8a7 7 0 0 1 14 0Z" />
+                                        </svg>
+                                        <span className="sr-only">Search</span>
+                                    </button>
                                 </div>
                             </div>
                         </div>
 
-                        {/* Nút tìm kiếm */}
-                        <button
-                            onClick={(e) => { e.preventDefault(); handleSearch(); }}
-                            type="submit"
-                            className="h-auto p-2.5 ms-2 text-sm font-medium text-white bg-blue-700 rounded-lg border border-blue-700 hover:bg-blue-800"
-                        >
-                            <svg className="w-4 h-4" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 20 20">
-                                <path stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="m19 19-4-4m0-7A7 7 0 1 1 1 8a7 7 0 0 1 14 0Z" />
-                            </svg>
-                            <span className="sr-only">Search</span>
-                        </button>
                     </div>
-
-
-                    <button
-                        onClick={() => openModal("add")}
-                        type="button"
-                        className="h-11 focus:outline-none text-white bg-green-700 hover:bg-green-800 focus:ring-4 focus:ring-green-300 font-medium rounded-lg text-sm px-5 py-2.5 me-2 mb-2 dark:bg-green-600 dark:hover:bg-green-700 dark:focus:ring-green-800"
-                    >
-                        Thêm sản phẩm
-                    </button>
                 </div>
 
                 <div className="max-w-full overflow-x-auto">
@@ -531,8 +544,11 @@ export default function ProductTable() {
                         <div className="flex items-center justify-between p-5">
                             <select
                                 name="pageSize"
-                                value={filters.page}
-                                onChange={(e) => setFilters({ ...filters, page: e.target.value })}
+                                value={filters.pageSize}
+                                onChange={(e) => {
+                                    const newPageSize = e.target.value;
+                                    setFilters((prev) => ({ ...prev, pageSize: newPageSize, page: 1 }));
+                                }}
                                 className="h-10 w-30 appearance-none rounded-lg border border-gray-300 px-4 py-1"
                             >
                                 <option value="10">10 / page</option>
@@ -543,8 +559,13 @@ export default function ProductTable() {
 
                             <div className="flex items-center gap-2 mt-4">
                                 <button
-                                    onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
-                                    disabled={currentPage === 1}
+                                    onClick={() =>
+                                        setFilters((prev) => ({
+                                            ...prev,
+                                            page: Math.max(prev.page - 1, 1),
+                                        }))
+                                    }
+                                    disabled={filters.page === 1}
                                     className="px-3 py-1 border rounded disabled:opacity-50"
                                 >
                                     ← Trước
@@ -553,8 +574,13 @@ export default function ProductTable() {
                                 {Array.from({ length: totalPages }, (_, i) => (
                                     <button
                                         key={i}
-                                        onClick={() => setCurrentPage(i + 1)}
-                                        className={`px-3 py-1 border rounded ${currentPage === i + 1 ? 'bg-blue-500 text-white' : ''
+                                        onClick={() =>
+                                            setFilters((prev) => ({
+                                                ...prev,
+                                                page: i + 1,
+                                            }))
+                                        }
+                                        className={`px-3 py-1 border rounded ${filters.page === i + 1 ? "bg-blue-500 text-white" : ""
                                             }`}
                                     >
                                         {i + 1}
@@ -562,8 +588,13 @@ export default function ProductTable() {
                                 ))}
 
                                 <button
-                                    onClick={() => setCurrentPage((prev) => Math.min(prev + 1, totalPages))}
-                                    disabled={currentPage === totalPages}
+                                    onClick={() =>
+                                        setFilters((prev) => ({
+                                            ...prev,
+                                            page: Math.min(prev.page + 1, totalPages),
+                                        }))
+                                    }
+                                    disabled={filters.page === totalPages}
                                     className="px-3 py-1 border rounded disabled:opacity-50"
                                 >
                                     Sau →
@@ -691,6 +722,7 @@ export default function ProductTable() {
                                 <div className="relative">
                                     <textarea name="description"
                                         id="description"
+                                        value={form.description || ""}
                                         rows={3}
                                         onChange={handleChange}
                                         className="block p-2.5 w-full text-sm text-gray-900 bg-gray-50 rounded-lg border border-gray-300
@@ -706,16 +738,25 @@ export default function ProductTable() {
                             <div>
                                 <Label>Nội dung về sản phẩm</Label>
                                 <div className="relative">
+                                    <ReactQuillEditor
+                                        value={form.content}
+                                        onChange={(value) => setForm({ ...form, content: value })}
+                                        placeholder="Nhập nội dung sản phẩm..."
+                                        className="border border-gray-300 rounded p-2 bg-white dark:bg-gray-700 dark:text-white min-h-[150px]"
+                                    />
+                                </div>
+                                {/* <div className="relative">
                                     <textarea name="content"
                                         id="content"
                                         rows={5}
+                                        value={form.content || ""}
                                         onChange={handleChange}
                                         className="block p-2.5 w-full text-sm text-gray-900 bg-gray-50 rounded-lg border border-gray-300
                                          focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:border-gray-600
                                           dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
                                         placeholder="Nội dung sản phẩm ...">
                                     </textarea>
-                                </div>
+                                </div> */}
                             </div>
 
                             <br />
@@ -734,24 +775,17 @@ export default function ProductTable() {
 
                                 <div className="col-md-5">
                                     <Label>Trạng thái hiển thị sản phẩm trên website: </Label>
-                                    <Label className="inline-flex items-center">
-                                        <input
-                                            type="checkbox"
-                                            name="status"
-                                            className="sr-only peer"
-                                            checked={form.status}
-                                            value={form.status}
-                                            onChange={handleChange}
-                                        />
-                                        <div className="relative w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 
-                                        peer-focus:ring-blue-300 dark:peer-focus:ring-blue-800 rounded-full peer dark:bg-gray-700
-                                         peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full
-                                          peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] 
-                                          after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full 
-                                          after:h-5 after:w-5 after:transition-all dark:border-gray-600 peer-checked:bg-blue-600
-                                           dark:peer-checked:bg-blue-600"></div>
-                                        <span className="ms-3 text-sm font-medium text-gray-900 dark:text-gray-300">Ẩn/Hiện</span>
-                                    </Label>
+                                    <Switch
+                                        label="status"
+                                        name="status"
+                                        checked={form.status}
+                                        onChange={(checked, name) => {
+                                            setForm({
+                                                ...form,
+                                                status: checked
+                                            });
+                                        }}
+                                    />
                                 </div>
                             </div>
                             <br />
@@ -760,14 +794,24 @@ export default function ProductTable() {
                             <div className="flex gap-8">
                                 {Object.entries(information.product_type_register).map(([key, label]) => (
                                     <div key={key} className="flex items-center gap-3 py-2">
-                                        <input
-                                            className="w-5 h-5"
-                                            type="checkbox"
+
+                                        <Checkbox
                                             id={key}
                                             name="type_register"
-                                            value={key}
                                             checked={form.type_register.includes(key)}
-                                            onChange={handleChange}
+                                            onChange={(checked) => {
+                                                setForm((prev) => {
+                                                    const current = prev.type_register || [];
+                                                    const updated = checked
+                                                        ? [...current, key]
+                                                        : current.filter((item: string) => item !== key);
+
+                                                    return {
+                                                        ...prev,
+                                                        type_register: updated,
+                                                    };
+                                                });
+                                            }}
                                         />
                                         <label htmlFor="scales">{label}</label>
                                     </div>
@@ -790,24 +834,21 @@ export default function ProductTable() {
 
                                 <div className="col-md-5">
                                     <Label>Trạng thái áp dụng điểm thưởng: </Label>
-                                    <Label className="inline-flex items-center">
-                                        <input
-                                            type="checkbox"
-                                            name="condition_point.status"
-                                            className="sr-only peer"
-                                            checked={form.condition_point.status}
-                                            value={form.condition_point?.status ?? false}
-                                            onChange={handleChange}
-                                        />
-                                        <div className="relative w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 
-                                        peer-focus:ring-blue-300 dark:peer-focus:ring-blue-800 rounded-full peer dark:bg-gray-700
-                                         peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full
-                                          peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] 
-                                          after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full 
-                                          after:h-5 after:w-5 after:transition-all dark:border-gray-600 peer-checked:bg-blue-600
-                                           dark:peer-checked:bg-blue-600"></div>
-                                        <span className="ms-3 text-sm font-medium text-gray-900 dark:text-gray-300">Không áp dụng / Áp dụng</span>
-                                    </Label>
+
+                                    <Switch
+                                        label="Checked"
+                                        name="condition_point.status"
+                                        checked={form.condition_point.status}
+                                        onChange={(checked, name) => {
+                                            setForm({
+                                                ...form,
+                                                condition_point: {
+                                                    ...form.condition_point,
+                                                    status: checked
+                                                }
+                                            });
+                                        }}
+                                    />
                                 </div>
                             </div>
                             <br />
@@ -826,24 +867,20 @@ export default function ProductTable() {
 
                                 <div className="col-md-5">
                                     <Label>Trạng thái áp dụng điểm thưởng: </Label>
-                                    <Label className="inline-flex items-center">
-                                        <input
-                                            type="checkbox"
-                                            name="condition_donate.status"
-                                            className="sr-only peer"
-                                            checked={form.condition_donate.status}
-                                            value={form.condition_donate?.status ?? false}
-                                            onChange={handleChange}
-                                        />
-                                        <div className="relative w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 
-                                        peer-focus:ring-blue-300 dark:peer-focus:ring-blue-800 rounded-full peer dark:bg-gray-700
-                                         peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full
-                                          peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] 
-                                          after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full 
-                                          after:h-5 after:w-5 after:transition-all dark:border-gray-600 peer-checked:bg-blue-600
-                                           dark:peer-checked:bg-blue-600"></div>
-                                        <span className="ms-3 text-sm font-medium text-gray-900 dark:text-gray-300">Không áp dụng / Áp dụng</span>
-                                    </Label>
+                                    <Switch
+                                        label="status"
+                                        name="condition_donate.status"
+                                        checked={form.condition_donate.status}
+                                        onChange={(checked, name) => {
+                                            setForm({
+                                                ...form,
+                                                condition_donate: {
+                                                    ...form.condition_donate,
+                                                    status: checked
+                                                }
+                                            });
+                                        }}
+                                    />
                                 </div>
                             </div>
                             <br />
@@ -886,15 +923,11 @@ export default function ProductTable() {
                                 <div className="col-md-8">
                                     <Label>Thời gian kết thúc :</Label>
                                     <DatePicker
-                                        type="number"
-                                        selected={endDateDonate}
-                                        onChange={(date) => setEndDateDonate(date)}
+                                        selected={form.condition_donate.end_timestamp ? new Date(form.condition_donate.end_timestamp) : null}
+                                        onChange={(date) => handleDateChange(date, "condition_donate.end_timestamp")}
                                         showTimeSelect
                                         dateFormat="Pp"
                                         className="border p-2 rounded"
-                                        name="condition_donate.point"
-                                        value={form.condition_donate?.point ?? 0}
-                                    // onChange={handleChange}
                                     />
                                 </div>
                             </div>
@@ -929,28 +962,26 @@ export default function ProductTable() {
 
                             <div className="col-md-5">
                                 <Label>Tự động update Số lượng sản phẩm: </Label>
-                                <Label className="inline-flex items-center">
-                                    <input
-                                        type="checkbox"
-                                        name="conditions.stock_auto_update"
-                                        className="sr-only peer"
-                                        value={form.conditions?.stock_auto_update ?? false}
-                                        onChange={handleChange}
-                                    />
-                                    <div className="relative w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 
-                                        peer-focus:ring-blue-300 dark:peer-focus:ring-blue-800 rounded-full peer dark:bg-gray-700
-                                         peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full
-                                          peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] 
-                                          after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full 
-                                          after:h-5 after:w-5 after:transition-all dark:border-gray-600 peer-checked:bg-blue-600
-                                           dark:peer-checked:bg-blue-600"></div>
-                                    <span className="ms-3 text-sm font-medium text-gray-900 dark:text-gray-300">Không áp dụng / Áp dụng</span>
-                                </Label>
+
+                                <Switch
+                                    label="status"
+                                    name="conditions.stock_auto_update"
+                                    checked={form.conditions.stock_auto_update}
+                                    onChange={(checked, name) => {
+                                        setForm({
+                                            ...form,
+                                            conditions: {
+                                                ...form.conditions,
+                                                stock_auto_update: checked ? 1 : 0,
+                                            }
+                                        });
+                                    }}
+                                />
                             </div>
                             <br />
 
                             <div className="grid md:grid-cols-2 md:gap-6">
-                                <div className="col-md-8">
+                                {/* <div className="col-md-8">
                                     <Label>Tổng cược ( Điểm ): </Label>
                                     <Input
                                         type="number"
@@ -959,7 +990,7 @@ export default function ProductTable() {
                                         value={form.conditions?.total_bet ?? 0}
                                         onChange={handleChange}
                                     />
-                                </div>
+                                </div> */}
                                 <div className="col-md-8">
                                     <Label>Tổng nạp ( Điểm ) :</Label>
                                     <Input
@@ -989,7 +1020,7 @@ export default function ProductTable() {
                                     <Input
                                         type="number"
                                         placeholder="Vip"
-                                        name="level_vip.level_vip"
+                                        name="conditions.level_vip"
                                         value={form.conditions?.level_vip ?? 0}
                                         onChange={handleChange}
                                     />
@@ -1000,24 +1031,23 @@ export default function ProductTable() {
                             <h2>Có thể nhận thưởng sau bao nhiêu ngày ( Tổng cược ): </h2>
                             <div className="col-md-5">
                                 <Label>Áp dụng thời gian cho tổng nạp: </Label>
-                                <Label className="inline-flex items-center">
-                                    <input
-                                        type="checkbox"
-                                        name="conditions.time_condition.status"
-                                        className="sr-only peer"
-                                        checked={form.conditions.time_condition.status}
-                                        value={form.conditions.time_condition?.status ?? false}
-                                        onChange={handleChange}
-                                    />
-                                    <div className="relative w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 
-                                        peer-focus:ring-blue-300 dark:peer-focus:ring-blue-800 rounded-full peer dark:bg-gray-700
-                                         peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full
-                                          peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] 
-                                          after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full 
-                                          after:h-5 after:w-5 after:transition-all dark:border-gray-600 peer-checked:bg-blue-600
-                                           dark:peer-checked:bg-blue-600"></div>
-                                    <span className="ms-3 text-sm font-medium text-gray-900 dark:text-gray-300">Không áp dụng / Áp dụng</span>
-                                </Label>
+                                <Switch
+                                    label="status"
+                                    name="conditions.time_condition.status"
+                                    checked={form.conditions.time_condition.status}
+                                    onChange={(checked, name) => {
+                                        setForm({
+                                            ...form,
+                                            conditions: {
+                                                ...form.conditions,
+                                                time_condition: {
+                                                    ...form.conditions.time_condition,
+                                                    status: checked,
+                                                },
+                                            },
+                                        });
+                                    }}
+                                />
                             </div>
                             <br />
 
@@ -1025,27 +1055,23 @@ export default function ProductTable() {
                                 <div className="col-md-8">
                                     <Label>Thời gian bắt đầu: </Label>
                                     <DatePicker
-                                        type="number"
-                                        selected={endDateDonate}
-                                        onChange={(e) => handleDetailChange(e)}
+                                        selected={form.conditions.time_condition.start_timestamp ? new Date(form.conditions.time_condition.start_timestamp) : null}
+                                        onChange={(date) => handleDateChange(date, "conditions.time_condition.start_timestamp")}
                                         showTimeSelect
                                         dateFormat="Pp"
                                         className="border p-2 rounded"
                                         name="conditions.time_condition"
-                                        value={form.conditions.time_condition?.start_timestamp ?? 0}
                                     />
                                 </div>
                                 <div className="col-md-8">
                                     <Label>Thời gian kết thúc :</Label>
                                     <DatePicker
-                                        type="number"
-                                        selected={endDateDonate}
-                                        onChange={(e) => handleDetailChange(e)}
+                                        selected={form.conditions.time_condition.end_timestamp ? new Date(form.conditions.time_condition.end_timestamp) : null}
+                                        onChange={(date) => handleDateChange(date, "conditions.time_condition.end_timestamp")}
                                         showTimeSelect
                                         dateFormat="Pp"
                                         className="border p-2 rounded"
-                                        name="conditions.time_condition"
-                                        value={form.conditions.time_condition?.end_timestamp ?? 0}
+                                        name="conditions.time_condition.end_timestamp"
                                     />
                                 </div>
                             </div>

@@ -5,7 +5,7 @@ import { useSidebar } from "@/context/SidebarContext";
 import AppHeader from "@/layout/AppHeader";
 import AppSidebar from "@/layout/AppSidebar";
 import Backdrop from "@/layout/Backdrop";
-import 'react-toastify/dist/ReactToastify.css';
+import { ToastContainer } from "react-toastify";
 import { getDecodedToken, logoutHelper } from '@/utils/helper';
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/context/AuthContext";
@@ -36,20 +36,25 @@ export default function AdminLayout({
   if (!user) return null;
 
   return (
-    <div className="min-h-screen xl:flex">
-      {/* Sidebar and Backdrop */}
-      <AppSidebar />
-      <Backdrop />
-      {/* Main Content Area */}
-      <div
-        className={`flex-1 transition-all  duration-300 ease-in-out ${mainContentMargin}`}
-      >
-        {/* Header */}
+    <>
+      <div className="min-h-screen xl:flex">
+        {/* Sidebar and Backdrop */}
+        <AppSidebar />
+        <Backdrop />
+        {/* Main Content Area */}
+        <div
+          className={`flex-1 transition-all  duration-300 ease-in-out ${mainContentMargin}`}
+        >
+          {/* Header */}
 
-        <AppHeader user={user} />
-        {/* Page Content */}
-        <div className="p-4 mx-auto max-w-(--breakpoint-2xl) md:p-6">{children}</div>
+          <AppHeader user={user} />
+          {/* Page Content */}
+          <div className="p-4 mx-auto max-w-(--breakpoint-2xl) md:p-6">{children}</div>
+        </div>
       </div>
-    </div>
+
+      {/* Toast Global Container */}
+      <ToastContainer position="top-right" className="!top-25" autoClose={3000} />
+    </>
   );
 }

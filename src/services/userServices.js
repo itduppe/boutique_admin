@@ -60,6 +60,26 @@ const userServices = {
         }
     },
 
+    changeUserStatus: async (id) => {
+        try {
+            const res = await UserApi.patch(`/users/update-status/${id}`);
+            toast.success(res.data.message);
+            return res.data;
+        } catch (error) {
+            return handleError(error, "Lỗi khi đổi status người dùng");
+        }
+    },
+
+    changeUserRole: async (id, role) => {
+        try {
+            const res = await UserApi.patch(`/users/update-role?id=${id}&role=${role}`);
+            toast.success(res.data.message);
+            return res.data;
+        } catch (error) {
+            return handleError(error, "Lỗi khi quyền người dùng");
+        }
+    },
+
     deleteUser: async (id) => {
         try {
             const res = await UserApi.delete(`/users/${id}`);

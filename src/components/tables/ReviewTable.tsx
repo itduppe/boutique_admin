@@ -1,5 +1,4 @@
 import React, { useState, useEffect } from "react";
-import { toast } from "react-toastify";
 import {
     Table,
     TableBody,
@@ -17,6 +16,20 @@ import { EyeCloseIcon, EyeIcon } from "@/icons";
 import reviewServices from '@/services/reviewServices';
 import TextArea from "../form/input/TextArea";
 import { useAuth } from "@/context/AuthContext";
+import { toast } from "react-toastify";
+import { getSiteSystem, setSiteSystem } from "@/utils/storage";
+
+const initialForm = {
+    username: '',
+    display_name: '',
+    avatar: '',
+    content: '',
+    location: 0,
+    status: true,
+    site: getSiteSystem(),
+    created_by: '',
+    updated_by: ''
+};
 
 export default function ReviewTable() {
     const [data, setData] = useState([]);
@@ -25,7 +38,7 @@ export default function ReviewTable() {
     const [itemsPerPage, setItemsPerPage] = useState(10);
     const { isOpen, modalType, openModal, closeModal } = useMultiModal();
     const [showPassword, setShowPassword] = useState(false);
-    const [form, setForm] = useState({});
+    const [form, setForm] = useState(initialForm);
     const [error, setError] = useState('');
     const [loading, setLoading] = useState(false);
     const [editReviewId, setEditReviewId] = useState(null);
@@ -35,17 +48,6 @@ export default function ReviewTable() {
 
     useEffect(() => {
         if (isOpen) {
-            setForm({
-                username: '',
-                display_name: '',
-                avatar: '',
-                content: '',
-                location: 0,
-                status: true,
-                site: 'F168',
-                created_by: user?.username
-            });
-
             setError('');
         }
     }, [isOpen, modalType]);
@@ -57,24 +59,26 @@ export default function ReviewTable() {
 
         try {
             let res;
+            form.created_by = user.username ?? "Admin";
+            form.site = getSiteSystem();
+
             if (modalType === "add") {
                 res = await reviewServices.postReview(form);
                 if (res.status_code == 200) {
-                    alert(res.message)
                     closeModal();
                     fetchReviews();
                 } else {
-                    alert(res.message)
+                    toast.error(res.message);
                 }
             } else if (modalType === "update") {
+                form.updated_by = user.username ?? "Admin";
                 res = await reviewServices.updateReview(form, editReviewId);
 
                 if (res.status_code == 200) {
-                    alert(res.message)
                     closeModal();
                     fetchReviews();
                 } else {
-                    alert(res.message)
+                    toast.error(res.message)
                 }
             }
 
@@ -91,7 +95,6 @@ export default function ReviewTable() {
 
         try {
             await reviewServices.delete(id);
-            toast.success("Xóa bình luận thành công");
             fetchReviews();
         } catch (err) {
             setError('Xóa bình luận thất bại. Vui lòng kiểm tra thông tin.');
@@ -101,11 +104,18 @@ export default function ReviewTable() {
     };
 
     const handleChange = (e) => {
-        const { name, value } = e.target;
+        const { name, type, value, checked } = e.target;
+        let newValue = value;
+
+        if (name === 'status') {
+            newValue = type === 'checkbox' ? checked : value === 'true';
+        } else if (name === 'location') {
+            newValue = parseInt(value);
+        }
 
         setForm((prev) => ({
             ...prev,
-            [name]: name === 'location' ? parseInt(value) : value,
+            [name]: newValue,
         }));
     };
 
@@ -121,7 +131,7 @@ export default function ReviewTable() {
             const params = {
                 page: 1,
                 limit: 10,
-                site: 'F168',
+                site: getSiteSystem(),
                 ...searchParams
             };
 
@@ -136,22 +146,17 @@ export default function ReviewTable() {
 
     const fetchReviewId = async (id) => {
         try {
-            // const res = await reviewServices.getById(id);
-            // const data = res.data;
+            const reviews = await reviewServices.getById(id);
 
-            // setForm({
-            //     username: data.username,
-            //     display_name: data.display_name,
-            //     avatar: data.avatar,
-            //     content: data.content,
-            //     location: data.location,
-            //     status: data.status,
-            //     created_by: data.created_by,
-            // });
+            setForm(prev => ({
+                ...prev,
+                ...reviews.data,
+                updated_by: user?.username
+            }));
 
-            openModal("update");
+            setTimeout(() => openModal("update"), 200);
         } catch (err) {
-            console.error("Lỗi lấy dữ liệu review", err);
+            toast.error("Lỗi lấy dữ liệu review", err);
         }
     }
 
@@ -168,31 +173,7 @@ export default function ReviewTable() {
     return (
         <>
             <div className="overflow-hidden rounded-xl border border-gray-200 bg-white dark:border-white/[0.05] dark:bg-white/[0.03]">
-                <div className="m-5 flex justify-between">
-                    <div className="flex items-center max-w-sm">
-                        <label htmlFor="simple-search" className="sr-only">Search</label>
-                        <div className="relative w-full">
-                            <div className="absolute inset-y-0 start-0 flex items-center ps-3 pointer-events-none">
-                                <svg className="w-4 h-4 text-gray-500 dark:text-gray-400" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 18 20">
-                                    <path stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 5v10M3 5a2 2 0 1 0 0-4 2 2 0 0 0 0 4Zm0 10a2 2 0 1 0 0 4 2 2 0 0 0 0-4Zm12 0a2 2 0 1 0 0 4 2 2 0 0 0 0-4Zm0 0V6a3 3 0 0 0-3-3H9m1.5-2-2 2 2 2" />
-                                </svg>
-                            </div>
-                            <input
-                                value={filters.username}
-                                onChange={(e) => setFilters({ ...filters, username: e.target.value })}
-                                type="text" id="simple-search"
-                                className="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full ps-10 p-2.5  dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500" placeholder="Search username..." required />
-                        </div>
-                        <button
-                            onClick={(e) => { e.preventDefault(); handleSearch(); }}
-                            type="submit" className="p-2.5 ms-2 text-sm font-medium text-white bg-blue-700 rounded-lg border border-blue-700 hover:bg-blue-800 focus:ring-4 focus:outline-none focus:ring-blue-300 dark:bg-blue-600 dark:hover:bg-blue-700 dark:focus:ring-blue-800">
-                            <svg className="w-4 h-4" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 20 20">
-                                <path stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="m19 19-4-4m0-7A7 7 0 1 1 1 8a7 7 0 0 1 14 0Z" />
-                            </svg>
-                            <span className="sr-only">Search</span>
-                        </button>
-                    </div>
-
+                <div className="m-5 flex justify-end">
                     <button
                         onClick={() => openModal("add")}
                         type="button"
@@ -278,7 +259,6 @@ export default function ReviewTable() {
                                     onChange={handleChange}
                                 />
                                 <br />
-
                                 <Label>Tên hiển thị</Label>
                                 <Input
                                     type="text"
@@ -299,7 +279,13 @@ export default function ReviewTable() {
                                 />
                                 <br />
                                 <label className="inline-flex items-center cursor-pointer">
-                                    <input type="checkbox" value="" className="sr-only peer" />
+                                    <input
+                                        type="checkbox"
+                                        name="status"
+                                        checked={form.status}
+                                        value={form.status}
+                                        onChange={handleChange}
+                                        className="sr-only peer" />
                                     <div className="relative w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 dark:peer-focus:ring-blue-800 rounded-full peer dark:bg-gray-700 peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-gray-600 peer-checked:bg-blue-600 dark:peer-checked:bg-blue-600"></div>
                                     <span className="ms-3 text-sm font-medium text-gray-900 dark:text-gray-300">Ẩn/Hiện</span>
                                 </label>
@@ -308,6 +294,7 @@ export default function ReviewTable() {
                                 <Label>Nội dung</Label>
                                 <textarea name="content"
                                     rows={4}
+                                    value={form.content || ""}
                                     onChange={handleChange}
                                     className="block p-2.5 w-full text-sm text-gray-900 bg-gray-50 rounded-lg border border-gray-300 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500" placeholder="Nội dung ở đây ...">
                                 </textarea>
@@ -320,16 +307,6 @@ export default function ReviewTable() {
                                     name="location"
                                     onChange={handleChange}
                                 />
-
-                                <Label>Người tạo</Label>
-                                <Input
-                                    type="text"
-                                    placeholder="Người tạo"
-                                    value={form.created_by}
-                                    name="created_by"
-                                    onChange={handleChange}
-                                />
-                                <br />
                             </>
 
                             {error && <p className="mt-2 text-sm text-red-500">{error}</p>}

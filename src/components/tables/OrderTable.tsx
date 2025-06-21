@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useRef, useEffect } from "react";
 import { toast } from "react-toastify";
 import {
     Table,
@@ -15,76 +15,65 @@ import Input from "../form/input/InputField";
 import Label from "../form/Label";
 import { EyeCloseIcon, EyeIcon } from "@/icons";
 import orderServices from '@/services/orderServices';
+import { Dropdown } from "../ui/dropdown/Dropdown";
+import { DropdownItem } from "../ui/dropdown/DropdownItem";
+import { getSiteSystem, setSiteSystem } from "@/utils/storage";
+import { information } from '@/utils/info.const';
+import DatePicker from '@/components/form/date-picker';
 
 import TextArea from "../form/input/TextArea";
 
+const initialForm = {
+    product_id: '',
+    title: '',
+    content: '',
+    note: '',
+    type_message: '',
+    site: getSiteSystem(),
+    created_by: 'ADMIN'
+}
+
 export default function OrderTable() {
     const [data, setData] = useState([]);
+    const [countData, setCountData] = useState([]);
     const [currentPage, setCurrentPage] = useState(1);
     const [itemsPerPage, setItemsPerPage] = useState(10);
     const { isOpen, modalType, openModal, closeModal } = useMultiModal();
-    const [form, setForm] = useState({});
+    const [form, setForm] = useState(initialForm);
     const [error, setError] = useState('');
     const [loading, setLoading] = useState(false);
-    const [editReviewId, setEditReviewId] = useState(null);
+    const [editOrderId, setEditOrderId] = useState(null);
     const [filters, setFilters] = useState({
-        username: '',
+        from_date: "",
+        to_date: "",
+        username: "",
+        phone_number: "",
+        address: "",
+        full_name: "",
+        product_id: "",
+        status: "",
+        page: 1,
+        pageSize: 10
     });
+    const [showMenu, setShowMenu] = useState(null);
+    const totalPages = Math.ceil(itemsPerPage / filters.pageSize);
+    const startIndex = (currentPage - 1) * itemsPerPage;
+    const endIndex = startIndex + itemsPerPage;
+    const pagedData = data.slice(startIndex, endIndex);
+    const menuRefs = useRef({});
 
     useEffect(() => {
         if (isOpen) {
-            setForm({
-                product_id: '',
-                title: '',
-                content: '',
-                note: '',
-                type_message: '',
-                site: 'F168',
-                created_by: 'ADMIN'
-            });
-
             setError('');
         }
     }, [isOpen, modalType]);
 
-    const handleSave = async (e) => {
-        e.preventDefault();
-        setError('');
-        setLoading(true);
-
-        try {
-            let res;
-            if (modalType === "update") {
-                res = await orderServices.updateStatusById(form, editReviewId);
-
-                if (res.status_code == 200) {
-                    alert(res.message)
-                    closeModal();
-                    fetchOrders();
-                } else {
-                    alert(res.message)
-                }
-            }
-
-        } catch (err) {
-            setError('Thao tác thất bại. Vui lòng kiểm tra thông tin.');
-        } finally {
-            setLoading(false);
-        }
-    };
-
     const deleteOrder = async (id) => {
-        setError('');
-        setLoading(true);
-
         try {
             await orderServices.delete(id);
-            toast.success("Xóa bình luận thành công");
             fetchOrders();
         } catch (err) {
             setError('Xóa bình luận thất bại. Vui lòng kiểm tra thông tin.');
-        } finally {
-            setLoading(false);
         }
     };
 
@@ -98,89 +87,141 @@ export default function OrderTable() {
     };
 
     const handleSearch = async () => {
-        const params = {};
+        const { username, phone_number, address, full_name, product_id, from_date, to_date, status, page, pageSize } = filters;
 
-        if (filters.username) params.username = filters.username;
+        const params = {
+            ...(username && { username }),
+            ...(phone_number && { phone_number }),
+            ...(address && { address }),
+            ...(full_name && { full_name }),
+            ...(product_id && { product_id }),
+            ...(from_date && { from_date }),
+            ...(to_date && { to_date }),
+            ...(status && { status }),
+            page,
+            pageSize,
+            site: getSiteSystem()
+        };
+
         await fetchOrders(params);
     }
+
+    const handleExportExcel = async () => {
+        try {
+            const { username, phone_number, address, full_name, product_id, from_date, to_date, status, pageSize } = filters;
+
+            const params = {
+                ...(username && { username }),
+                ...(phone_number && { phone_number }),
+                ...(address && { address }),
+                ...(full_name && { full_name }),
+                ...(product_id && { product_id }),
+                ...(from_date && { from_date }),
+                ...(to_date && { to_date }),
+                ...(status && { status }),
+                pageSize: pageSize || 1000,
+                site: getSiteSystem(),
+            };
+
+            const blob = await orderServices.getExport(params);
+
+            const url = window.URL.createObjectURL(new Blob([blob]));
+            const link = document.createElement('a');
+            link.href = url;
+            link.setAttribute('download', 'orders_export.xlsx');
+            document.body.appendChild(link);
+            link.click();
+            link.remove();
+            window.URL.revokeObjectURL(url);
+
+        } catch (error) {
+            toast.error(error.message || 'Xuất Excel thất bại');
+        }
+    };
 
     const fetchOrders = async (searchParams = {}) => {
         try {
             const params = {
-                page: 1,
-                limit: 10,
-                site: 'F168',
+                site: getSiteSystem(),
                 ...searchParams
             };
 
-            const review = await orderServices.getAll(params);
-            setData(review.data);
-            setCurrentPage(review.page);
-            setItemsPerPage(review.total);
+            const orders = await orderServices.getAll(params);
+            setData(orders.data);
+            setCountData(orders.statusCount);
+            setCurrentPage(orders.page);
+            setItemsPerPage(orders.total);
         } catch (err) {
             toast.error("Danh sách bình luận bị lỗi !");
         }
     };
 
-    const fetchReviewId = async (id) => {
+    const updateOrderStatus = async (orderStatus) => {
         try {
-            // const res = await Orderservices.getById(id);
-            // const data = res.data;
+            const res = await orderServices.updateStatusById(orderStatus);
 
-            // setForm({
-            //     username: data.username,
-            //     display_name: data.display_name,
-            //     avatar: data.avatar,
-            //     content: data.content,
-            //     location: data.location,
-            //     status: data.status,
-            //     created_by: data.created_by,
-            // });
-
-            openModal("update");
+            if (res.status_code == 200) {
+                closeModal();
+                handleSearch();
+                setShowMenu(null);
+            } else {
+                toast.error(res.message)
+            }
         } catch (err) {
-            console.error("Lỗi lấy dữ liệu review", err);
+            setError('Thao tác thất bại. Vui lòng kiểm tra thông tin.');
+        } finally {
+            setLoading(false);
         }
     }
-
-    // useEffect(() => {
-    //     if (editReviewId) {
-    //         fetchReviewId(editReviewId);
-    //     }
-    // }, [editReviewId]);
 
     useEffect(() => {
         fetchOrders();
     }, []);
 
+    useEffect(() => {
+        handleSearch();
+    }, [filters]);
+
+    useEffect(() => {
+        const handleClickOutside = (event) => {
+            const currentRef = menuRefs.current[showMenu];
+            if (currentRef && !currentRef.contains(event.target)) {
+                setShowMenu(null);
+            }
+        };
+
+        if (showMenu !== null) {
+            document.addEventListener("mousedown", handleClickOutside);
+        }
+
+        return () => {
+            document.removeEventListener("mousedown", handleClickOutside);
+        };
+    }, [showMenu]);
+
     return (
         <>
             <div className="overflow-hidden rounded-xl border border-gray-200 bg-white dark:border-white/[0.05] dark:bg-white/[0.03]">
-                <div className="m-5 flex justify-between">
-                    <div className="flex items-center max-w-sm">
-                        <label htmlFor="simple-search" className="sr-only">Search</label>
-                        <div className="relative w-full">
-                            <div className="absolute inset-y-0 start-0 flex items-center ps-3 pointer-events-none">
-                                <svg className="w-4 h-4 text-gray-500 dark:text-gray-400" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 18 20">
-                                    <path stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 5v10M3 5a2 2 0 1 0 0-4 2 2 0 0 0 0 4Zm0 10a2 2 0 1 0 0 4 2 2 0 0 0 0-4Zm12 0a2 2 0 1 0 0 4 2 2 0 0 0 0-4Zm0 0V6a3 3 0 0 0-3-3H9m1.5-2-2 2 2 2" />
-                                </svg>
-                            </div>
-                            <input
-                                value={filters.username}
-                                onChange={(e) => setFilters({ ...filters, username: e.target.value })}
-                                type="text" id="simple-search"
-                                className="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full ps-10 p-2.5  dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500" placeholder="Search username..." required />
-                        </div>
+                <div className="m-5 flex items-center">
+                    <div className="text-2xl">Quản lý đơn hàng | </div>
+                    {Object.entries(information.order_status).map(([key, label]) => (
                         <button
-                            onClick={(e) => { e.preventDefault(); handleSearch(); }}
-                            type="submit" className="p-2.5 ms-2 text-sm font-medium text-white bg-blue-700 rounded-lg border border-blue-700 hover:bg-blue-800 focus:ring-4 focus:outline-none focus:ring-blue-300 dark:bg-blue-600 dark:hover:bg-blue-700 dark:focus:ring-blue-800">
-                            <svg className="w-4 h-4" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 20 20">
-                                <path stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="m19 19-4-4m0-7A7 7 0 1 1 1 8a7 7 0 0 1 14 0Z" />
-                            </svg>
-                            <span className="sr-only">Search</span>
+                            key={key}
+                            onClick={() => setFilters((prev) => ({ ...prev, status: key, page: 1 }))}
+                            className={`block text-md px-4 py-2 text-left text-gray-700 hover:bg-gray-100 rounded ${filters.status === key ? 'bg-blue-500 text-white' : ''
+                                }`}
+                        >
+                            {label} {" "}
+                            {key === 'success' && `(${countData.allSuccess})`}
+                            {key === 'pending' && `(${countData.allPending})`}
+                            {key === 'confirm' && `(${countData.allConfirm})`}
+                            {key === 'shipped' && `(${countData.allShipped})`}
+                            {key === 'deny' && `(${countData.allDeny})`}
                         </button>
-                    </div>
+                    ))}
+                </div>
 
+                <div className="w-full flex justify-end">
                     <button
                         onClick={() => openModal("add")}
                         type="button"
@@ -188,6 +229,134 @@ export default function OrderTable() {
                     >
                         Xóa nhiều order
                     </button>
+
+                    <button
+                        type="button"
+                        onClick={handleExportExcel}
+                        className="focus:outline-none text-white bg-green-700 hover:bg-green-800 focus:ring-4 focus:ring-green-300 font-medium rounded-lg text-sm px-5 py-2.5 me-2 mb-2 dark:bg-green-600 dark:hover:bg-green-700 dark:focus:ring-green-800"
+                    >
+                        Export Order
+                    </button>
+                </div>
+
+                <div className="m-5 flex justify-between">
+                    <div className="w-full pb-10">
+                        <div className="flex flex-wrap gap-5 mb-4">
+                            <div className="w-[18.6%]">
+                                <label htmlFor="username" className="sr-only">Tên Tài khoản</label>
+                                <div className="relative w-full">
+                                    <input
+                                        id="username"
+                                        name="username"
+                                        type="text"
+                                        value={filters.username}
+                                        onChange={(e) => setFilters({ ...filters, username: e.target.value })}
+                                        className="border border-gray-300 text-black text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full pl-2.5 p-2.5"
+                                        placeholder="Tên Tài khoản"
+                                    />
+                                </div>
+                            </div>
+
+                            <div className="w-[18.6%]">
+                                <label htmlFor="phone_number" className="sr-only">Số điện thoại</label>
+                                <div className="relative w-full">
+                                    <input
+                                        id="phone_number"
+                                        name="phone_number"
+                                        type="text"
+                                        value={filters.phone_number}
+                                        onChange={(e) => setFilters({ ...filters, phone_number: e.target.value })}
+                                        className="border border-gray-300 text-black text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full pl-2.5 p-2.5"
+                                        placeholder="Số điện thoại"
+                                    />
+                                </div>
+                            </div>
+
+                            <div className="w-[18.6%]">
+                                <label htmlFor="address" className="sr-only">Địa Chỉ</label>
+                                <div className="relative w-full">
+                                    <input
+                                        id="address"
+                                        name="address"
+                                        type="text"
+                                        value={filters.address}
+                                        onChange={(e) => setFilters({ ...filters, address: e.target.value })}
+                                        className="border border-gray-300 text-black text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full pl-2.5 p-2.5"
+                                        placeholder="Địa Chỉ"
+                                    />
+                                </div>
+                            </div>
+
+
+                            <div className="w-[18.6%]">
+                                <label htmlFor="full_name" className="sr-only">Tên đầy đủ</label>
+                                <div className="relative w-full">
+                                    <input
+                                        id="full_name"
+                                        name="full_name"
+                                        type="text"
+                                        value={filters.full_name}
+                                        onChange={(e) => setFilters({ ...filters, full_name: e.target.value })}
+                                        className="border border-gray-300 text-black text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full pl-2.5 p-2.5"
+                                        placeholder="Tên đầy đủ"
+                                    />
+                                </div>
+                            </div>
+
+                            <div className="w-[18.6%]">
+                                <label htmlFor="product_id" className="sr-only">ID sản phẩm</label>
+                                <div className="relative w-full">
+                                    <input
+                                        id="product_id"
+                                        name="product_id"
+                                        type="text"
+                                        value={filters.product_id}
+                                        onChange={(e) => setFilters({ ...filters, product_id: e.target.value })}
+                                        className="border border-gray-300 text-black text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full pl-2.5 p-2.5"
+                                        placeholder="ID sản phẩm"
+                                    />
+                                </div>
+                            </div>
+
+                            <div className="w-[18.6%]">
+                                <DatePicker
+                                    id="date-picker"
+                                    label="Ngày bắt đầu"
+                                    value={filters.from_date}
+                                    onChange={(selectedDates, dateStr01) => {
+                                        setFilters({ ...filters, from_date: dateStr01 });
+                                    }}
+                                    placeholder="Chọn ngày bắt đầu"
+                                />
+                            </div>
+
+                            <div className="w-[18.6%]">
+                                <DatePicker
+                                    id="date-picker"
+                                    label="Ngày kết thúc"
+                                    value={filters.to_date}
+                                    onChange={(selectedDates, dateStr02) => {
+                                        setFilters({ ...filters, to_date: dateStr02 });
+                                    }}
+                                    placeholder="Chọn ngày kết thúc"
+                                />
+                            </div>
+
+                            <div className="w-[18.6%] mt-7">
+                                <button
+                                    onClick={(e) => { e.preventDefault(); handleSearch(); }}
+                                    type="submit"
+                                    className="h-auto p-2.5 ms-2 text-sm font-medium text-white bg-blue-700 rounded-lg border border-blue-700 hover:bg-blue-800"
+                                >
+                                    <svg className="w-4 h-4" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 20 20">
+                                        <path stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="m19 19-4-4m0-7A7 7 0 1 1 1 8a7 7 0 0 1 14 0Z" />
+                                    </svg>
+                                    <span className="sr-only">Search</span>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
                 </div>
 
                 <div className="max-w-full overflow-x-auto">
@@ -195,7 +364,7 @@ export default function OrderTable() {
                         <Table>
                             <TableHeader className="border-b border-gray-100 dark:border-white/[0.05]">
                                 <TableRow>
-                                    {["STT", "Tên tài khoản", "Hệ thống", "Nội dung", "Trạng thái", "Vị trí", "Ngày tạo", "Ngày cập nhật", "Hành Động"].map((header, idx) => (
+                                    {["STT", "Sản phẩm", "Tài khoản", "Tên người nhận", "Điện thoại", "Địa chỉ", "TG Đăng Ký", "IP", "Trạng Thái", "Hành Động"].map((header, idx) => (
                                         <TableCell
                                             key={idx}
                                             isHeader
@@ -208,31 +377,66 @@ export default function OrderTable() {
                             </TableHeader>
 
                             <TableBody className="divide-y divide-gray-100 dark:divide-white/[0.05]">
-                                {data.map((review, index) => (
+                                {pagedData.map((order, index) => (
                                     <TableRow key={index}>
                                         <TableCell className="px-5 py-4 sm:px-6 text-start">{index + 1}</TableCell>
-                                        <TableCell className="px-4 py-3 text-gray-500 text-start text-theme-sm dark:text-gray-400">{review.reviewname}</TableCell>
-                                        <TableCell className="px-4 py-3 text-gray-500 text-start text-theme-sm dark:text-gray-400">{review.site}</TableCell>
-                                        <TableCell className="px-4 py-3 text-gray-500 text-start text-theme-sm dark:text-gray-400">{review.content}</TableCell>
-                                        <TableCell className="px-4 py-3 text-gray-500 text-theme-sm dark:text-gray-400">{review.status ? "Hiển thị" : "Tạm ẩn"}</TableCell>
-                                        <TableCell className="px-4 py-3 text-gray-500 text-theme-sm dark:text-gray-400">{review.location}</TableCell>
-                                        <TableCell className="px-4 py-3 text-gray-500 text-start text-theme-sm dark:text-gray-400">{new Date(review.createdAt).toLocaleDateString("vi-VN", { timeZone: 'UTC' })}</TableCell>
-                                        <TableCell className="px-4 py-3 text-gray-500 text-theme-sm dark:text-gray-400">{new Date(review.updatedAt).toLocaleDateString("vi-VN", { timeZone: 'UTC' })}</TableCell>
-                                        <TableCell className="px-4 py-3 text-gray-500 text-theme-sm dark:text-gray-400">
-                                            <div className="flex justify-center gap-2">
+                                        <TableCell className="px-4 py-3 text-gray-500 text-start text-theme-sm dark:text-gray-400">
+                                            Mã sản phẩm: {order.product_id} <br />
+                                            {order.product_name} <br />
+                                            Màu: {order.color} <br />
+                                            Size: {order.size} <br />
+                                        </TableCell>
+                                        <TableCell className="px-4 py-3 text-gray-500 text-start text-theme-sm dark:text-gray-400">{order.username}</TableCell>
+                                        <TableCell className="px-4 py-3 text-gray-500 text-start text-theme-sm dark:text-gray-400">{order.full_name}</TableCell>
+                                        <TableCell className="px-4 py-3 text-gray-500 text-theme-sm dark:text-gray-400">{order.phone_number}</TableCell>
+                                        <TableCell className="px-4 py-3 text-gray-500 text-theme-sm dark:text-gray-400">{order.address}</TableCell>
+                                        <TableCell className="px-4 py-3 text-gray-500 text-start text-theme-sm dark:text-gray-400">{new Date(order.createdAt).toLocaleDateString("vi-VN", { timeZone: 'UTC' })}</TableCell>
+                                        <TableCell className="px-4 py-3 text-gray-500 text-theme-sm dark:text-gray-400">{new Date(order.updatedAt).toLocaleDateString("vi-VN", { timeZone: 'UTC' })}</TableCell>
+                                        <TableCell className="px-4 py-3 text-gray-500 text-theme-sm dark:text-gray-400">{order.status}</TableCell>
+
+
+                                        <TableCell className="px-4 py-3 text-gray-500 text-theme-sm dark:text-gray-400 relative">
+                                            <div className="flex justify-center items-center gap-2">
+                                                {/* Dropdown sửa trạng thái */}
+                                                <div className="relative inline-block text-left">
+                                                    <button
+                                                        onClick={() => setShowMenu(order._id)}
+                                                        type="button"
+                                                        className="inline-flex justify-center w-full rounded-md bg-blue-700 px-4 py-2 text-sm font-medium text-white hover:bg-blue-800 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                                    >
+                                                        Sửa trạng thái
+                                                    </button>
+
+                                                    {showMenu === order._id && (
+                                                        <div
+                                                            className="absolute right-0 z-20 mt-2 w-40 origin-top-right rounded-md bg-white shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none"
+                                                            ref={menuRefs}
+                                                        >
+                                                            <div className="py-1">
+                                                                {Object.entries(information.order_status).map(([key, label]) => (
+                                                                    <button
+                                                                        key={key}
+                                                                        onClick={() =>
+                                                                            updateOrderStatus({
+                                                                                status: key,
+                                                                                id: order._id,
+                                                                            })
+                                                                        }
+                                                                        className="block w-full px-4 py-2 text-left text-sm text-gray-700 hover:bg-gray-100"
+                                                                    >
+                                                                        {label}
+                                                                    </button>
+                                                                ))}
+                                                            </div>
+                                                        </div>
+                                                    )}
+                                                </div>
+
+                                                {/* Nút xóa */}
                                                 <button
-                                                    onClick={() => {
-                                                        setEditReviewId(review._id);
-                                                        fetchReviewId(review._id);
-                                                    }}
-                                                    className="text-white bg-blue-700 hover:bg-blue-800 focus:ring-4 focus:ring-blue-300 font-medium rounded-lg text-sm px-5 py-2.5 me-2 mb-2 dark:bg-blue-600 dark:hover:bg-blue-700 focus:outline-none dark:focus:ring-blue-800"
-                                                >
-                                                    Sửa
-                                                </button>
-                                                <button
-                                                    onClick={() => deleteOrder(review._id)}
+                                                    onClick={() => deleteOrder(order._id)}
                                                     type="button"
-                                                    className="focus:outline-none text-white bg-red-700 hover:bg-red-800 focus:ring-4 focus:ring-red-300 font-medium rounded-lg text-sm px-5 py-2.5 me-2 mb-2 dark:bg-red-600 dark:hover:bg-red-700 dark:focus:ring-red-900"
+                                                    className="text-white bg-red-700 hover:bg-red-800 focus:ring-4 focus:ring-red-300 font-medium rounded-lg text-sm px-4 py-2 dark:bg-red-600 dark:hover:bg-red-700 focus:outline-none dark:focus:ring-red-800"
                                                 >
                                                     Xóa
                                                 </button>
@@ -242,95 +446,70 @@ export default function OrderTable() {
                                 ))}
                             </TableBody>
                         </Table>
+
+                        <div className="flex items-center justify-between p-5">
+                            <select
+                                name="pageSize"
+                                value={filters.pageSize}
+                                onChange={(e) => {
+                                    const newPageSize = e.target.value;
+                                    setFilters((prev) => ({ ...prev, pageSize: newPageSize, page: 1 }));
+                                }}
+                                className="h-10 w-30 appearance-none rounded-lg border border-gray-300 px-4 py-1"
+                            >
+                                <option value="10">10 / page</option>
+                                <option value="20">20 / page</option>
+                                <option value="50">50 / page</option>
+                                <option value="100">100 / page</option>
+                            </select>
+
+                            <div className="flex items-center gap-2 mt-4">
+                                <button
+                                    onClick={() =>
+                                        setFilters((prev) => ({
+                                            ...prev,
+                                            page: Math.max(prev.page - 1, 1),
+                                        }))
+                                    }
+                                    disabled={filters.page === 1}
+                                    className="px-3 py-1 border rounded disabled:opacity-50"
+                                >
+                                    ← Trước
+                                </button>
+
+                                {Array.from({ length: totalPages }, (_, i) => (
+                                    <button
+                                        key={i}
+                                        onClick={() =>
+                                            setFilters((prev) => ({
+                                                ...prev,
+                                                page: i + 1,
+                                            }))
+                                        }
+                                        className={`px-3 py-1 border rounded ${filters.page === i + 1 ? "bg-blue-500 text-white" : ""
+                                            }`}
+                                    >
+                                        {i + 1}
+                                    </button>
+                                ))}
+
+                                <button
+                                    onClick={() =>
+                                        setFilters((prev) => ({
+                                            ...prev,
+                                            page: Math.min(prev.page + 1, totalPages),
+                                        }))
+                                    }
+                                    disabled={filters.page === totalPages}
+                                    className="px-3 py-1 border rounded disabled:opacity-50"
+                                >
+                                    Sau →
+                                </button>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
-
-            {/* Modal Form */}
-            <Modal isOpen={isOpen} onClose={closeModal} className="max-w-[700px] m-4">
-                <div className="no-scrollbar relative w-full max-w-[700px] overflow-y-auto rounded-3xl bg-white p-4 dark:bg-gray-900 lg:p-11">
-                    <div className="px-2 pr-14">
-                        <h4 className="mb-2 text-2xl font-semibold text-gray-800 dark:text-white/90">
-                            {modalType === "add" ? "Tạo tin nhắn khách" : "Sửa tin nhắn khách"}
-                        </h4>
-                    </div>
-
-                    <form className="flex flex-col">
-                        <div className="custom-scrollbar h-[450px] overflow-y-auto px-2 pb-3">
-                            <>
-                                <Label>Tên tài khoản</Label>
-                                <select
-                                    name="product"
-                                    className={`h-11 w-full appearance-none rounded-lg border border-gray-300  px-4 py-2.5 pr-11 text-sm shadow-theme-xs placeholder:text-gray-400 focus:border-brand-300 focus:outline-hidden focus:ring-3 focus:ring-brand-500/10 dark:border-gray-700 dark:bg-gray-900 dark:text-white/90 dark:placeholder:text-white/30 dark:focus:border-brand-800`}
-                                    value={form.product_id}
-                                    onChange={(e) => handleChange(e, e.target.value)}
-                                >
-                                    <option value="">-- Chọn sản phẩm --</option>
-
-                                    <option value="abc">
-                                        Sản phẩm 1
-                                    </option>
-                                    <option value="abc">
-                                        Sản phẩm 1
-                                    </option>
-                                </select>
-                                <br />
-
-                                <Label>Tiêu đề</Label>
-                                <Input
-                                    type="text"
-                                    placeholder="Tiêu đề"
-                                    value={form.title}
-                                    name="title"
-                                    onChange={handleChange}
-                                />
-                                <br />
-                                <Label>Nội dung</Label>
-                                <textarea name="content"
-                                    rows={4}
-                                    onChange={handleChange}
-                                    className="block p-2.5 w-full text-sm text-gray-900 bg-gray-50 rounded-lg border border-gray-300 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500" placeholder="Nội dung ở đây ...">
-                                </textarea>
-                                <br />
-                                <Label>Ghi chú</Label>
-                                <textarea name="note"
-                                    rows={4}
-                                    onChange={handleChange}
-                                    className="block p-2.5 w-full text-sm text-gray-900 bg-gray-50 rounded-lg border border-gray-300 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500" placeholder="Nội dung ở đây ...">
-                                </textarea>
-                                <br />
-                                <Label>Loại thư</Label>
-                                <select
-                                    name="type_message"
-                                    className={`h-11 w-full appearance-none rounded-lg border border-gray-300  px-4 py-2.5 pr-11 text-sm shadow-theme-xs placeholder:text-gray-400 focus:border-brand-300 focus:outline-hidden focus:ring-3 focus:ring-brand-500/10 dark:border-gray-700 dark:bg-gray-900 dark:text-white/90 dark:placeholder:text-white/30 dark:focus:border-brand-800`}
-                                    value={form.product_id}
-                                    onChange={(e) => handleChange(e, e.target.value)}
-                                >
-                                    <option value="">-- Chọn sản phẩm --</option>
-
-                                    <option value="deny">
-                                        Thông báo từ chối
-                                    </option>
-                                    <option value="success">
-                                        Thông báo thành công
-                                    </option>
-                                </select>
-                            </>
-
-                            {error && <p className="mt-2 text-sm text-red-500">{error}</p>}
-                        </div>
-
-                        <div className="flex items-center gap-3 px-2 mt-6 lg:justify-end">
-                            <Button size="sm" variant="outline" onClick={closeModal}>
-                                Đóng
-                            </Button>
-                            <Button size="sm" onClick={handleSave}>
-                                {loading ? 'Đang xử lý...' : 'Lưu thông tin'}
-                            </Button>
-                        </div>
-                    </form>
-                </div>
-            </Modal>
         </>
     );
 }
