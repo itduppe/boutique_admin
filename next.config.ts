@@ -1,25 +1,23 @@
-// import type { NextConfig } from "next";
+import path from "path";
+import type { NextConfig } from "next";
 
-// const nextConfig: NextConfig = {
-//   /* config options here */
-//   reactStrictMode: false,
-//   webpack(config) {
-//     config.module.rules.push({
-//       test: /\.svg$/,
-//       use: ["@svgr/webpack"],
-//     });
-//     return config;
-//   },
-// };
+const nextConfig: NextConfig = {
+  // reactStrictMode: true, // bật nếu muốn
+  webpack(config) {
+    // Alias để dùng @ thay cho src
+    config.resolve.alias = {
+      ...(config.resolve.alias || {}),
+      "@": path.resolve(__dirname, "src"),
+    };
 
-// export default nextConfig;
+    // SVG loader nếu bạn đang dùng svgr
+    config.module.rules.push({
+      test: /\.svg$/,
+      use: ["@svgr/webpack"],
+    });
 
-/** @type {import('next').NextConfig} */
-const nextConfig = {
-  webpack: (config) => {
-    config.cache = false;
     return config;
   },
 };
 
-module.exports = nextConfig;
+export default nextConfig;

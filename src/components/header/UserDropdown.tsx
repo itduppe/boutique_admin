@@ -5,15 +5,12 @@ import { Dropdown } from "../ui/dropdown/Dropdown";
 import { DropdownItem } from "../ui/dropdown/DropdownItem";
 import { logoutHelper } from '@/utils/helper';
 import { useRouter } from 'next/navigation';
+import { useAuth } from "@/context/AuthContext";
 
-interface UserDropdownProps {
-  user: any;
-}
-
-const UserDropdown = ({ user }: UserDropdownProps) => {
+const UserDropdown = () => {
   const [isOpen, setIsOpen] = useState(false);
-  const [token, setToken] = useState("");
   const router = useRouter();
+  const { user } = useAuth();
 
   const handleLogout = () => {
     logoutHelper();

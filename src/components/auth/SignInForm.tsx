@@ -1,4 +1,6 @@
 "use client";
+
+import Cookies from "js-cookie";
 import Checkbox from "@/components/form/input/Checkbox";
 import Input from "@/components/form/input/InputField";
 import Label from "@/components/form/Label";
@@ -42,19 +44,22 @@ export default function SignInForm() {
 
     try {
       const res = await authServices.login(form);
-
       localStorage.setItem("site-system", form.site);
-      localStorage.setItem('token', res.data);
+      Cookies.set("token", res.data, { expires: 0.5, path: '/' });
 
       if (res.status_code == 200 && res.data) {
-        router.push('/admin');
+        setTimeout(() => {
+          router.push("/admin");
+        }, 3000);
       } else {
         toast.error(res.message);
       }
     } catch (err) {
       setError('Đăng nhập thất bại. Vui lòng kiểm tra thông tin.');
     } finally {
-      setLoading(false);
+      setTimeout(() => {
+        setLoading(false);
+      }, 2000);
     }
   };
 

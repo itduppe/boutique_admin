@@ -3,6 +3,7 @@
 import type { Metadata } from "next";
 import React, { useEffect, useState } from "react";
 import { redirect, useRouter } from 'next/navigation';
+import { useAuth } from "@/context/AuthContext";
 
 // export const metadata: Metadata = {
 //   title:
@@ -11,29 +12,6 @@ import { redirect, useRouter } from 'next/navigation';
 // };
 
 const AdminDashboard = () => {
-  const [token, setToken] = useState<string | null>(null);
-  const [checkingAuth, setCheckingAuth] = useState(true);
-  const router = useRouter();
-
-  useEffect(() => {
-    const storedToken = localStorage.getItem('token');
-    if (storedToken) {
-      setToken(storedToken);
-    }
-
-    setCheckingAuth(false);
-  }, []);
-
-  useEffect(() => {
-    if (!checkingAuth && !token) {
-      router.push('/login');
-    }
-  }, [checkingAuth, token, router]);
-
-  if (checkingAuth) {
-    return <div>Đang kiểm tra đăng nhập...</div>;
-  }
-
   return (
     <div className="grid grid-cols-12 gap-4 md:gap-6">
 

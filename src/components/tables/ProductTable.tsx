@@ -19,7 +19,8 @@ import { information } from '@/utils/info.const';
 import { setNestedValue } from '@/utils/object';
 import DatePicker from "react-datepicker";
 import Checkbox from "../form/input/Checkbox";
-import ReactQuillEditor from "../form/input/ReactQuillEditor";
+import ContentEditor from "../form/input/ContentEditor";
+
 import "react-datepicker/dist/react-datepicker.css";
 import { useAuth } from "@/context/AuthContext";
 import { getSiteSystem, setSiteSystem } from "@/utils/storage";
@@ -95,10 +96,6 @@ export default function ProductTable() {
     const startIndex = (currentPage - 1) * itemsPerPage;
     const endIndex = startIndex + itemsPerPage;
     const pagedData = data.slice(startIndex, endIndex);
-    const editor = useEditor({
-        extensions: [StarterKit],
-        content: '<p>Hello World! 🌎️</p>',
-    })
 
     useEffect(() => {
         if (editProductId) {
@@ -511,7 +508,7 @@ export default function ProductTable() {
                                         <TableCell className="px-5 py-4 sm:px-6 text-start">{(currentPage - 1) * itemsPerPage + index + 1}</TableCell>
                                         <TableCell className="px-4 py-3 text-gray-500 text-start text-theme-sm dark:text-gray-400">{products.name}</TableCell>
                                         <TableCell className="px-4 py-3 text-gray-500 text-start text-theme-sm dark:text-gray-400">{products.product_id}</TableCell>
-                                        <TableCell className="px-4 py-3 text-gray-500 text-start text-theme-sm dark:text-gray-400">{products.content}</TableCell>
+                                        <TableCell className="px-4 py-3 text-gray-500 text-start text-theme-sm dark:text-gray-400">{products.description}</TableCell>
                                         <TableCell className="px-4 py-3 text-gray-500 text-theme-sm dark:text-gray-400">{products.status ? "Hiển thị" : "Tạm ẩn"}</TableCell>
                                         <TableCell className="px-4 py-3 text-gray-500 text-theme-sm dark:text-gray-400">{products.location}</TableCell>
                                         <TableCell className="px-4 py-3 text-gray-500 text-start text-theme-sm dark:text-gray-400">{new Date(products.createdAt).toLocaleDateString("vi-VN", { timeZone: 'UTC' })}</TableCell>
@@ -737,28 +734,18 @@ export default function ProductTable() {
 
                             <div>
                                 <Label>Nội dung về sản phẩm</Label>
-                                <div className="relative">
-                                    <ReactQuillEditor
-                                        value={form.content}
-                                        onChange={(value) => setForm({ ...form, content: value })}
-                                        placeholder="Nhập nội dung sản phẩm..."
-                                        className="border border-gray-300 rounded p-2 bg-white dark:bg-gray-700 dark:text-white min-h-[150px]"
-                                    />
-                                </div>
-                                {/* <div className="relative">
-                                    <textarea name="content"
-                                        id="content"
-                                        rows={5}
-                                        value={form.content || ""}
-                                        onChange={handleChange}
-                                        className="block p-2.5 w-full text-sm text-gray-900 bg-gray-50 rounded-lg border border-gray-300
-                                         focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:border-gray-600
-                                          dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
-                                        placeholder="Nội dung sản phẩm ...">
-                                    </textarea>
-                                </div> */}
+                                <ContentEditor
+                                    value={form.content || ""}
+                                    onChange={(val) =>
+                                        setForm((prev) => ({
+                                            ...prev,
+                                            content: val,
+                                        }))
+                                    }
+                                    placeholder="Nội dung sản phẩm..."
+                                    className="bg-white dark:bg-gray-700 p-4 rounded text-gray-900 dark:text-white"
+                                />
                             </div>
-
                             <br />
 
                             <div className="grid md:grid-cols-2 md:gap-6">

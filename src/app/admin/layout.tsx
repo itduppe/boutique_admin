@@ -1,12 +1,12 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
+import Cookies from "js-cookie";
+import React, { useState, useEffect } from "react";
 import { useSidebar } from "@/context/SidebarContext";
 import AppHeader from "@/layout/AppHeader";
 import AppSidebar from "@/layout/AppSidebar";
 import Backdrop from "@/layout/Backdrop";
 import { ToastContainer } from "react-toastify";
-import { getDecodedToken, logoutHelper } from '@/utils/helper';
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/context/AuthContext";
 
@@ -19,41 +19,39 @@ export default function AdminLayout({
   const { user, isLoading } = useAuth();
   const router = useRouter();
 
-  useEffect(() => {
-    // if (isLoading) return;
-
-    // if (!user) {
-    //   router.push("/login");
-    // }
-  }, [user, isLoading, router]);
-
   const mainContentMargin = isMobileOpen
     ? "ml-0"
     : isExpanded || isHovered
       ? "lg:ml-[290px]"
       : "lg:ml-[90px]";
 
-  if (!user) return null;
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <p className="text-lg font-semibold text-gray-500">Đang tải dữ liệu...</p>
+      </div>
+    );
+  }
+
+  useEffect(() => {
+    if (!isLoading && !user) {
+      router.push("/login");
+    }
+  }, [isLoading, user]);
 
   return (
     <>
       <div className="min-h-screen xl:flex">
-        {/* Sidebar and Backdrop */}
         <AppSidebar />
         <Backdrop />
-        {/* Main Content Area */}
         <div
-          className={`flex-1 transition-all  duration-300 ease-in-out ${mainContentMargin}`}
+          className={`flex-1 transition-all duration-300 ease-in-out ${mainContentMargin}`}
         >
-          {/* Header */}
-
-          <AppHeader user={user} />
-          {/* Page Content */}
-          <div className="p-4 mx-auto max-w-(--breakpoint-2xl) md:p-6">{children}</div>
+          <AppHeader />
+          <div className="p-4 mx-auto max-w-screen-2xl md:p-6">{children}</div>
         </div>
       </div>
 
-      {/* Toast Global Container */}
       <ToastContainer position="top-right" className="!top-25" autoClose={3000} />
     </>
   );

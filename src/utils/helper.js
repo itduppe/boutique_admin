@@ -1,21 +1,22 @@
 import { jwtDecode } from "jwt-decode";
+import Cookies from "js-cookie";
 
 function getDecodedToken() {
-  if (typeof window === 'undefined') return null;
+  if (typeof window === "undefined") return null;
 
-  const token = localStorage.getItem('token');
+  const token = Cookies.get("token");
   if (!token) return null;
 
   try {
     const decoded = jwtDecode(token);
     return decoded;
-  } catch (error) {
+  } catch {
     return null;
   }
 }
 
 function logoutHelper() {
-  localStorage.removeItem("token");
+  Cookies.remove("token");
   localStorage.removeItem("site-system");
 }
 

@@ -4,7 +4,7 @@ import React from "react";
 import dynamic from "next/dynamic";
 import "react-quill/dist/quill.snow.css";
 
-// ReactQuill chỉ chạy trên client, dùng dynamic import với ssr: false
+// ReactQuill chỉ chạy được ở client
 const ReactQuill = dynamic(() => import("react-quill"), { ssr: false });
 
 interface ReactQuillEditorProps {
@@ -17,8 +17,8 @@ interface ReactQuillEditorProps {
 const ReactQuillEditor: React.FC<ReactQuillEditorProps> = ({
   value,
   onChange,
-  placeholder = "Nhập nội dung...",
-  className = "",
+  placeholder,
+  className,
 }) => {
   const modules = {
     toolbar: [
@@ -31,14 +31,15 @@ const ReactQuillEditor: React.FC<ReactQuillEditorProps> = ({
   };
 
   return (
-    <ReactQuill
-      theme="snow"
-      value={value}
-      onChange={onChange}
-      modules={modules}
-      placeholder={placeholder}
-      className={className}
-    />
+    <div className={className}>
+      <ReactQuill
+        theme="snow"
+        value={value}
+        onChange={onChange}
+        modules={modules}
+        placeholder={placeholder}
+      />
+    </div>
   );
 };
 

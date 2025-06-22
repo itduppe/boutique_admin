@@ -1,28 +1,20 @@
 "use client";
 
-import { useEffect, useState } from 'react';
+import { useEffect } from 'react';
 import { useRouter } from "next/navigation";
+import Cookies from "js-cookie";
 
 export default function HomePage() {
-    const [token, setToken] = useState("");
-    const [checkingAuth, setCheckingAuth] = useState(true);
-    const router = useRouter();
+  const router = useRouter();
 
-    useEffect(() => {
-        const storedToken = localStorage.getItem('token');
-        if (storedToken) {
-            setToken(storedToken);
-        }
-        setCheckingAuth(false);
-    }, []);
+  useEffect(() => {
+    const token = Cookies.get("token");
+    if (token) {
+      router.replace("/admin");
+    } else {
+      router.replace("/login");
+    }
+  }, []);
 
-    useEffect(() => {
-        if (checkingAuth && token) {
-            router.replace("/admin");
-        } else {
-            router.replace("/login");
-        }
-    }, []);
-
-    return null;
+  return null;
 }

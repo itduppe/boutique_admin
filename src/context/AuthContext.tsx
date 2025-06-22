@@ -4,50 +4,47 @@ import React, { createContext, useState, useContext, useEffect } from "react";
 import { getDecodedToken, logoutHelper } from "@/utils/helper";
 
 interface User {
-    id?: string;
-    username?: string;
-    display_name?: string;
-    role?: string;
-    site?: string;
+  id?: string;
+  username?: string;
+  role?: string;
+  site?: string;
 }
 
 interface AuthContextType {
-    user: User | null;
-    setUser: (user: User | null) => void;
-    logout: () => void;
-    isLoading: boolean; 
+  user: User | null;
+  setUser: (user: User | null) => void;
+  logout: () => void;
+  isLoading: boolean;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
-    const [user, setUser] = useState<User | null>(null);
-    const [isLoading, setIsLoading] = useState(true);
+  const [user, setUser] = useState<User | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
 
-    useEffect(() => {
-        const decodedUser = getDecodedToken();
-        if (decodedUser) {
-            setUser(decodedUser);
-        }
-    }, []);
+  useEffect(() => {
+    const decoded = getDecodedToken();
 
-    const logout = () => {
-        logoutHelper();
-        setUser(null);
-    };
+    if (decoded) setUser(decoded);
+    setIsLoading(false);
+  }, []);
 
-    return (
-        <AuthContext.Provider value={{ user, setUser, logout, isLoading }}>
-            {children}
-        </AuthContext.Provider>
-    );
+  const logout = () => {
+    logoutHelper();
+    setUser(null);
+    window.location.href = "/login";
+  };
+
+  return (
+    <AuthContext.Provider value={{ user, setUser, logout, isLoading }}>
+      {children}
+    </AuthContext.Provider>
+  );
 };
 
-// Custom hook để sử dụng context dễ dàng
 export const useAuth = () => {
-    const context = useContext(AuthContext);
-    if (context === undefined) {
-        throw new Error("useAuth must be used within an AuthProvider");
-    }
-    return context;
+  const context = useContext(AuthContext);
+  if (!context) throw new Error("useAuth must be used within AuthProvider");
+  return context;
 };
