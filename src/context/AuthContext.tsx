@@ -12,9 +12,10 @@ interface User {
 
 interface AuthContextType {
   user: User | null;
-  setUser: (user: User | null) => void;
+  setUser: React.Dispatch<React.SetStateAction<User | null>>;
   logout: () => void;
   isLoading: boolean;
+  refreshUser: () => void;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -23,23 +24,33 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
-  useEffect(() => {
+  const loadUser = () => {
+    setIsLoading(true);
+
     const decoded = getDecodedToken();
 
     if (decoded) {
-      const user: User = {
+      const userData: User = {
         id: (decoded as any).id,
         username: (decoded as any).username,
         role: (decoded as any).role,
         site: (decoded as any).site,
       };
-      setUser(user);
+      setUser(userData);
     } else {
       setUser(null);
     }
 
     setIsLoading(false);
+  };
+
+  useEffect(() => {
+    loadUser();
   }, []);
+
+  const refreshUser = () => {
+    loadUser();
+  };
 
   const logout = () => {
     logoutHelper();
@@ -48,7 +59,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   };
 
   return (
-    <AuthContext.Provider value={{ user, setUser, logout, isLoading }}>
+    <AuthContext.Provider value={{ user, setUser, logout, isLoading, refreshUser }}>
       {children}
     </AuthContext.Provider>
   );
@@ -56,6 +67,8 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
 export const useAuth = () => {
   const context = useContext(AuthContext);
-  if (!context) throw new Error("useAuth must be used within AuthProvider");
+  if (!context) {
+    throw new Error("useAuth must be used within AuthProvider");
+  }
   return context;
 };

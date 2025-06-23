@@ -25,6 +25,7 @@ import "react-datepicker/dist/react-datepicker.css";
 import { useAuth } from "@/context/AuthContext";
 import { getSiteSystem } from "@/utils/storage";
 import Switch from "../form/switch/Switch";
+import { formatDateTimeVN, toVietnamDate } from "@/utils/formatDateTime";
 
 interface ConditionPoint {
     status: boolean;
@@ -54,6 +55,8 @@ interface Conditions {
     total_deposit: number;
     times_deposit: number;
     level_vip: number;
+    last_day_deposit: number,
+    last_day_bet: number,
     time_condition: TimeCondition;
 }
 
@@ -112,6 +115,8 @@ const initialForm: FormType = {
         total_deposit: 0,
         times_deposit: 0,
         level_vip: 0,
+        last_day_deposit: 0,
+        last_day_bet: 0,
         time_condition: {
             status: true,
             start_timestamp: 0,
@@ -123,14 +128,14 @@ const initialForm: FormType = {
 };
 
 interface Product {
-  _id: string;
-  name: string;
-  product_id: string;
-  description: string;
-  status: boolean;
-  location: number;
-  createdAt: string;
-  updatedAt: string;
+    _id: string;
+    name: string;
+    product_id: string;
+    description: string;
+    status: boolean;
+    location: number;
+    createdAt: string;
+    updatedAt: string;
 }
 
 export default function ProductTable() {
@@ -328,7 +333,9 @@ export default function ProductTable() {
             'condition_donate.money',
             'condition_donate.max_money',
             'conditions.take_after_day',
-            // 'conditions.total_bet',
+            'conditions.total_bet',
+            'conditions.last_day_deposit',
+            'conditions.last_day_bet',
             'conditions.total_deposit',
             'conditions.times_deposit',
             'conditions.level_vip',
@@ -576,8 +583,8 @@ export default function ProductTable() {
                                         <TableCell className="px-4 py-3 text-gray-500 text-start text-theme-sm dark:text-gray-400">{products.description}</TableCell>
                                         <TableCell className="px-4 py-3 text-gray-500 text-theme-sm dark:text-gray-400">{products.status ? "Hiển thị" : "Tạm ẩn"}</TableCell>
                                         <TableCell className="px-4 py-3 text-gray-500 text-theme-sm dark:text-gray-400">{products.location}</TableCell>
-                                        <TableCell className="px-4 py-3 text-gray-500 text-start text-theme-sm dark:text-gray-400">{new Date(products.createdAt).toLocaleDateString("vi-VN", { timeZone: 'UTC' })}</TableCell>
-                                        <TableCell className="px-4 py-3 text-gray-500 text-theme-sm dark:text-gray-400">{new Date(products.updatedAt).toLocaleDateString("vi-VN", { timeZone: 'UTC' })}</TableCell>
+                                        <TableCell className="px-4 py-3 text-gray-500 text-start text-theme-sm dark:text-gray-400">{formatDateTimeVN(products.createdAt)}</TableCell>
+                                        <TableCell className="px-4 py-3 text-gray-500 text-theme-sm dark:text-gray-400">{formatDateTimeVN(products.updatedAt)}</TableCell>
                                         <TableCell className="px-4 py-3 text-gray-500 text-theme-sm dark:text-gray-400">
                                             <div className="flex justify-center gap-2">
                                                 <button
@@ -975,7 +982,7 @@ export default function ProductTable() {
                                 <div className="col-md-8">
                                     <Label>Thời gian kết thúc :</Label>
                                     <DatePicker
-                                        selected={form.condition_donate.end_timestamp ? new Date(form.condition_donate.end_timestamp) : null}
+                                        selected={form.condition_donate.end_timestamp ? toVietnamDate(new Date(form.condition_donate.end_timestamp)) : null}
                                         onChange={(date) => handleDateChange(date, "condition_donate.end_timestamp")}
                                         showTimeSelect
                                         dateFormat="Pp"
@@ -1033,7 +1040,7 @@ export default function ProductTable() {
                             <br />
 
                             <div className="grid md:grid-cols-2 md:gap-6">
-                                {/* <div className="col-md-8">
+                                <div className="col-md-8">
                                     <Label>Tổng cược ( Điểm ): </Label>
                                     <Input
                                         type="number"
@@ -1042,7 +1049,7 @@ export default function ProductTable() {
                                         value={form.conditions?.total_bet ?? 0}
                                         onChange={handleChange}
                                     />
-                                </div> */}
+                                </div>
                                 <div className="col-md-8">
                                     <Label>Tổng nạp ( Điểm ) :</Label>
                                     <Input
@@ -1080,6 +1087,30 @@ export default function ProductTable() {
                             </div>
                             <br />
 
+                            <div className="grid md:grid-cols-2 md:gap-6">
+                                <div className="col-md-8">
+                                    <Label>Số ngày nạp tiền gần nhất: </Label>
+                                    <Input
+                                        type="number"
+                                        placeholder="Số ngày nạp tiền gần nhất"
+                                        name="conditions.last_day_deposit"
+                                        value={form.conditions?.last_day_deposit ?? 0}
+                                        onChange={handleChange}
+                                    />
+                                </div>
+                                <div className="col-md-8">
+                                    <Label>Số ngày cược gần nhất:</Label>
+                                    <Input
+                                        type="number"
+                                        placeholder="Số ngày cược gần nhất"
+                                        name="conditions.last_day_bet"
+                                        value={form.conditions?.last_day_bet ?? 0}
+                                        onChange={handleChange}
+                                    />
+                                </div>
+                            </div>
+                            <br />
+
                             <h2>Có thể nhận thưởng sau bao nhiêu ngày ( Tổng cược ): </h2>
                             <div className="col-md-5">
                                 <Label>Áp dụng thời gian cho tổng nạp: </Label>
@@ -1107,7 +1138,7 @@ export default function ProductTable() {
                                 <div className="col-md-8">
                                     <Label>Thời gian bắt đầu: </Label>
                                     <DatePicker
-                                        selected={form.conditions.time_condition.start_timestamp ? new Date(form.conditions.time_condition.start_timestamp) : null}
+                                        selected={form.conditions.time_condition.start_timestamp ? toVietnamDate(new Date(form.conditions.time_condition.start_timestamp)) : null}
                                         onChange={(date) => handleDateChange(date, "conditions.time_condition.start_timestamp")}
                                         showTimeSelect
                                         dateFormat="Pp"
@@ -1118,7 +1149,7 @@ export default function ProductTable() {
                                 <div className="col-md-8">
                                     <Label>Thời gian kết thúc :</Label>
                                     <DatePicker
-                                        selected={form.conditions.time_condition.end_timestamp ? new Date(form.conditions.time_condition.end_timestamp) : null}
+                                        selected={form.conditions.time_condition.end_timestamp ? toVietnamDate(new Date(form.conditions.time_condition.end_timestamp)) : null}
                                         onChange={(date) => handleDateChange(date, "conditions.time_condition.end_timestamp")}
                                         showTimeSelect
                                         dateFormat="Pp"

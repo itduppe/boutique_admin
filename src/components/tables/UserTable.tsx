@@ -17,6 +17,7 @@ import { EyeCloseIcon, EyeIcon } from "@/icons";
 import userServices from '@/services/userServices';
 import { getSiteSystem, setSiteSystem } from "@/utils/storage";
 import { information } from '@/utils/info.const';
+import { formatDateTimeVN } from "@/utils/formatDateTime";
 
 const initialForm = {
     username: '',
@@ -29,13 +30,13 @@ const initialForm = {
 };
 
 type UserType = {
-  _id: string;
-  username: string;
-  site: string;
-  role: string;
-  status: boolean;
-  createdAt: string;
-  updatedAt: string;
+    _id: string;
+    username: string;
+    site: string;
+    role: string;
+    status: boolean;
+    createdAt: string;
+    updatedAt: string;
 };
 
 export default function UserTable() {
@@ -273,8 +274,8 @@ export default function UserTable() {
                                                 Update
                                             </button>
                                         </TableCell>
-                                        <TableCell className="px-4 py-3 text-gray-500 text-start text-theme-sm dark:text-gray-400">{new Date(user.createdAt).toLocaleDateString("vi-VN", { timeZone: 'UTC' })}</TableCell>
-                                        <TableCell className="px-4 py-3 text-gray-500 text-theme-sm dark:text-gray-400">{new Date(user.updatedAt).toLocaleDateString("vi-VN", { timeZone: 'UTC' })}</TableCell>
+                                        <TableCell className="px-4 py-3 text-gray-500 text-start text-theme-sm dark:text-gray-400">{formatDateTimeVN(user.createdAt)}</TableCell>
+                                        <TableCell className="px-4 py-3 text-gray-500 text-theme-sm dark:text-gray-400">{formatDateTimeVN(user.updatedAt)}</TableCell>
                                         <TableCell className="px-4 py-3 text-gray-500 text-theme-sm dark:text-gray-400">
                                             <div className="flex justify-center gap-2">
                                                 <button

@@ -17,6 +17,7 @@ import { useAuth } from "@/context/AuthContext";
 import DatePicker from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";
 import { getSiteSystem } from "@/utils/storage";
+import { formatDateTimeVN, toVietnamDate } from "@/utils/formatDateTime";
 
 interface SessionPoint {
     _id: string;
@@ -24,7 +25,6 @@ interface SessionPoint {
     end_timestamp: number;
     created_by: string;
     updated_by: string;
-    // thêm các trường nếu có
 }
 
 interface FormState {
@@ -129,8 +129,6 @@ export default function SesstionsPointTable() {
             const sesstionsPoint = await sessionPointServices.getAll(params);
             setData(sesstionsPoint.data);
             setCurrentPage(sesstionsPoint.page);
-            // Chú ý: nếu sesstionsPoint.total là tổng số bản ghi, không nên set vào itemsPerPage
-            // setItemsPerPage(sesstionsPoint.total); 
         } catch (err) {
             toast.error("Danh sách bình luận bị lỗi !");
         }
@@ -150,18 +148,6 @@ export default function SesstionsPointTable() {
         } catch (err) {
             console.error("Lỗi lấy dữ liệu review", err);
         }
-    };
-
-    const formatTimestamp = (timestamp: number) => {
-        if (!timestamp) return '';
-        return new Intl.DateTimeFormat('vi-VN', {
-            day: '2-digit',
-            month: '2-digit',
-            year: 'numeric',
-            hour: '2-digit',
-            minute: '2-digit',
-            second: '2-digit',
-        }).format(new Date(timestamp));
     };
 
     useEffect(() => {
@@ -208,8 +194,8 @@ export default function SesstionsPointTable() {
                                 {data.map((sesstionsPoint, index) => (
                                     <TableRow key={index}>
                                         <TableCell className="px-5 py-4 sm:px-6 text-start">{index + 1}</TableCell>
-                                        <TableCell className="px-4 py-3 text-gray-500 text-start text-theme-sm dark:text-gray-400"> {formatTimestamp(sesstionsPoint.start_timestamp)}</TableCell>
-                                        <TableCell className="px-4 py-3 text-gray-500 text-start text-theme-sm dark:text-gray-400">{formatTimestamp(sesstionsPoint.end_timestamp)}</TableCell>
+                                        <TableCell className="px-4 py-3 text-gray-500 text-start text-theme-sm dark:text-gray-400"> {formatDateTimeVN(sesstionsPoint.start_timestamp)}</TableCell>
+                                        <TableCell className="px-4 py-3 text-gray-500 text-start text-theme-sm dark:text-gray-400">{formatDateTimeVN(sesstionsPoint.end_timestamp)}</TableCell>
                                         <TableCell className="px-4 py-3 text-gray-500 text-start text-theme-sm dark:text-gray-400">{sesstionsPoint.created_by}</TableCell>
                                         <TableCell className="px-4 py-3 text-gray-500 text-start text-theme-sm dark:text-gray-400">{sesstionsPoint.updated_by}</TableCell>
                                         <TableCell className="px-4 py-3 text-gray-500 text-theme-sm dark:text-gray-400">
@@ -255,7 +241,7 @@ export default function SesstionsPointTable() {
                                 {/* Thời gian bắt đầu */}
                                 <Label>Thời gian bắt đầu</Label>
                                 <DatePicker
-                                    selected={form.start_timestamp ? new Date(form.start_timestamp) : null}
+                                    selected={form.start_timestamp ? toVietnamDate(new Date(form.start_timestamp)) : null}
                                     onChange={(date) => handleDateChange(date, "start_timestamp")}
                                     showTimeSelect
                                     dateFormat="Pp"
@@ -267,7 +253,7 @@ export default function SesstionsPointTable() {
                                 {/* Thời gian kết thúc */}
                                 <Label>Thời gian kết thúc</Label>
                                 <DatePicker
-                                    selected={form.end_timestamp ? new Date(form.end_timestamp) : null}
+                                    selected={form.end_timestamp ? toVietnamDate(new Date(form.end_timestamp)) : null}
                                     onChange={(date) => handleDateChange(date, "end_timestamp")}
                                     showTimeSelect
                                     dateFormat="Pp"

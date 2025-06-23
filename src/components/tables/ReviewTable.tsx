@@ -18,6 +18,7 @@ import TextArea from "../form/input/TextArea";
 import { useAuth } from "@/context/AuthContext";
 import { toast } from "react-toastify";
 import { getSiteSystem, setSiteSystem } from "@/utils/storage";
+import { formatDateTimeVN } from "@/utils/formatDateTime";
 
 const initialForm = {
     username: '',
@@ -216,8 +217,8 @@ export default function ReviewTable() {
                                         <TableCell className="px-4 py-3 text-gray-500 text-start text-theme-sm dark:text-gray-400">{review.content}</TableCell>
                                         <TableCell className="px-4 py-3 text-gray-500 text-theme-sm dark:text-gray-400">{review.status ? "Hiển thị" : "Tạm ẩn"}</TableCell>
                                         <TableCell className="px-4 py-3 text-gray-500 text-theme-sm dark:text-gray-400">{review.location}</TableCell>
-                                        <TableCell className="px-4 py-3 text-gray-500 text-start text-theme-sm dark:text-gray-400">{new Date(review.createdAt).toLocaleDateString("vi-VN", { timeZone: 'UTC' })}</TableCell>
-                                        <TableCell className="px-4 py-3 text-gray-500 text-theme-sm dark:text-gray-400">{new Date(review.updatedAt).toLocaleDateString("vi-VN", { timeZone: 'UTC' })}</TableCell>
+                                        <TableCell className="px-4 py-3 text-gray-500 text-start text-theme-sm dark:text-gray-400">{formatDateTimeVN(review.createdAt)}</TableCell>
+                                        <TableCell className="px-4 py-3 text-gray-500 text-theme-sm dark:text-gray-400">{formatDateTimeVN(review.updatedAt)}</TableCell>
                                         <TableCell className="px-4 py-3 text-gray-500 text-theme-sm dark:text-gray-400">
                                             <div className="flex justify-center gap-2">
                                                 <button

@@ -8,6 +8,7 @@ import Backdrop from "@/layout/Backdrop";
 import { ToastContainer } from "react-toastify";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/context/AuthContext";
+import Cookies from "js-cookie";
 
 export default function AdminLayout({
   children,
@@ -15,7 +16,7 @@ export default function AdminLayout({
   children: React.ReactNode;
 }) {
   const { isExpanded, isHovered, isMobileOpen } = useSidebar();
-  const { user, isLoading } = useAuth();
+  const { user, isLoading, refreshUser } = useAuth();
   const router = useRouter();
 
   const mainContentMargin = isMobileOpen
@@ -23,6 +24,18 @@ export default function AdminLayout({
     : isExpanded || isHovered
       ? "lg:ml-[290px]"
       : "lg:ml-[90px]";
+
+  useEffect(() => {
+    const token = Cookies.get("token");
+    if (!token) {
+      router.push("/login");
+      return;
+    }
+
+    if (!isLoading && !user) {
+      refreshUser();
+    }
+  }, [isLoading, user, refreshUser, router]);
 
   if (isLoading) {
     return (
@@ -32,11 +45,13 @@ export default function AdminLayout({
     );
   }
 
-  useEffect(() => {
-    if (!isLoading && !user) {
-      router.push("/login");
-    }
-  }, [isLoading, user]);
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <p className="text-lg font-semibold text-gray-500">Đang tải dữ liệu...</p>
+      </div>
+    );
+  }
 
   return (
     <>

@@ -13,6 +13,7 @@ import orderServices from '@/services/orderServices';
 import { getSiteSystem } from "@/utils/storage";
 import { information } from '@/utils/info.const';
 import DatePicker from '@/components/form/date-picker';
+import { formatDateTimeVN } from "@/utils/formatDateTime";
 
 const initialForm = {
     product_id: '',
@@ -427,8 +428,8 @@ export default function OrderTable() {
                                         <TableCell className="px-4 py-3 text-gray-500 text-start text-theme-sm dark:text-gray-400">{order.full_name}</TableCell>
                                         <TableCell className="px-4 py-3 text-gray-500 text-theme-sm dark:text-gray-400">{order.phone_number}</TableCell>
                                         <TableCell className="px-4 py-3 text-gray-500 text-theme-sm dark:text-gray-400">{order.address}</TableCell>
-                                        <TableCell className="px-4 py-3 text-gray-500 text-start text-theme-sm dark:text-gray-400">{new Date(order.createdAt).toLocaleDateString("vi-VN", { timeZone: 'UTC' })}</TableCell>
-                                        <TableCell className="px-4 py-3 text-gray-500 text-theme-sm dark:text-gray-400">{new Date(order.updatedAt).toLocaleDateString("vi-VN", { timeZone: 'UTC' })}</TableCell>
+                                        <TableCell className="px-4 py-3 text-gray-500 text-start text-theme-sm dark:text-gray-400">{formatDateTimeVN(order.createdAt)}</TableCell>
+                                        <TableCell className="px-4 py-3 text-gray-500 text-theme-sm dark:text-gray-400">{formatDateTimeVN(order.updatedAt)}</TableCell>
                                         <TableCell className="px-4 py-3 text-gray-500 text-theme-sm dark:text-gray-400">{order.status}</TableCell>
 
 

@@ -14,6 +14,7 @@ import Button from "../ui/button/Button";
 import customerServices from '@/services/customerServices';
 import { useAuth } from "@/context/AuthContext";
 import { getSiteSystem } from "@/utils/storage";
+import { formatDateTimeVN } from "@/utils/formatDateTime";
 
 const initialForm = {
     site: getSiteSystem(),
@@ -179,7 +180,7 @@ export default function Customer() {
                                         <TableCell className="px-5 py-4 sm:px-6 text-start">{(currentPage - 1) * itemsPerPage + index + 1}</TableCell>
                                         <TableCell className="px-5 py-4 sm:px-6 text-start">{customer.username}</TableCell>
                                         <TableCell className="px-5 py-4 sm:px-6 text-start">{customer.phone_number}</TableCell>
-                                        <TableCell className="px-5 py-4 sm:px-6 text-start">{customer.updatedAt}</TableCell>
+                                        <TableCell className="px-5 py-4 sm:px-6 text-start">{formatDateTimeVN(customer.updatedAt)}</TableCell>
                                         <TableCell className="px-5 py-4 sm:px-6 text-center">
                                             {customer.status ? "Hoạt động" : "Tạm ngừng"}
                                             <br />

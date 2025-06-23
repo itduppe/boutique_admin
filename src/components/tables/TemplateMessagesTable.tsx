@@ -20,6 +20,7 @@ import { information } from '@/utils/info.const';
 import TextArea from "../form/input/TextArea";
 import { getSiteSystem, setSiteSystem } from "@/utils/storage";
 import { useAuth } from "@/context/AuthContext";
+import { formatDateTimeVN } from "@/utils/formatDateTime";
 
 const initialForm = {
     product_id: '',
@@ -226,8 +227,8 @@ export default function TemplateMessagesTable() {
                                         <TableCell className="px-4 py-3 text-gray-500 text-start text-theme-sm dark:text-gray-400">{message.content}</TableCell>
                                         <TableCell className="px-4 py-3 text-gray-500 text-theme-sm dark:text-gray-400">{message.note}</TableCell>
                                         <TableCell className="px-4 py-3 text-gray-500 text-theme-sm dark:text-gray-400">{message.type_message}</TableCell>
-                                        <TableCell className="px-4 py-3 text-gray-500 text-start text-theme-sm dark:text-gray-400">{new Date(message.createdAt).toLocaleDateString("vi-VN", { timeZone: 'UTC' })}</TableCell>
-                                        <TableCell className="px-4 py-3 text-gray-500 text-theme-sm dark:text-gray-400">{new Date(message.updatedAt).toLocaleDateString("vi-VN", { timeZone: 'UTC' })}</TableCell>
+                                        <TableCell className="px-4 py-3 text-gray-500 text-start text-theme-sm dark:text-gray-400">{formatDateTimeVN(message.createdAt)}</TableCell>
+                                        <TableCell className="px-4 py-3 text-gray-500 text-theme-sm dark:text-gray-400">{formatDateTimeVN(message.updatedAt)}</TableCell>
                                         <TableCell className="px-4 py-3 text-gray-500 text-theme-sm dark:text-gray-400">
                                             <div className="flex justify-center gap-2">
                                                 <button
