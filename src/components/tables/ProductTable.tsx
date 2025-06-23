@@ -432,7 +432,7 @@ export default function ProductTable() {
                     <div className="m-5 flex justify-between">
                         <div className="w-full pb-10">
                             <div className="flex flex-wrap gap-5 mb-4">
-                                <div className="w-[18.6%]">
+                                <div className="w-[16.6%]">
                                     <label htmlFor="search_product_id" className="sr-only">Mã sản phẩm</label>
                                     <div className="relative w-full">
                                         <input
@@ -447,7 +447,7 @@ export default function ProductTable() {
                                     </div>
                                 </div>
 
-                                <div className="w-[18.6%]">
+                                <div className="w-[16.6%]">
                                     <label htmlFor="search_name" className="sr-only">Tên sản phẩm</label>
                                     <div className="relative w-full">
                                         <input
@@ -462,7 +462,7 @@ export default function ProductTable() {
                                     </div>
                                 </div>
 
-                                <div className="w-[18.6%]">
+                                {/* <div className="w-[16.6%]">
                                     <label htmlFor="created_by" className="sr-only">Người tạo</label>
                                     <div className="relative w-full">
                                         <select
@@ -478,10 +478,10 @@ export default function ProductTable() {
                                             ))}
                                         </select>
                                     </div>
-                                </div>
+                                </div> */}
 
                                 {/* Trạng thái sản phẩm */}
-                                <div className="w-[18.6%]">
+                                <div className="w-[16.6%]">
                                     <label htmlFor="product_tag" className="sr-only">Trạng thái sản phẩm</label>
                                     <div className="relative w-full">
                                         <select
@@ -499,7 +499,7 @@ export default function ProductTable() {
                                     </div>
                                 </div>
 
-                                <div className="w-[18.6%]">
+                                <div className="w-[16.6%]">
                                     <label htmlFor="product_type" className="sr-only">Kiểu sản phẩm</label>
                                     <div className="relative w-full">
                                         <select
@@ -517,7 +517,7 @@ export default function ProductTable() {
                                     </div>
                                 </div>
 
-                                <div className="w-[18.6%]">
+                                <div className="w-[16.6%]">
                                     <label htmlFor="status" className="sr-only">Trạng thái hiển thị</label>
                                     <div className="relative w-full">
                                         <select
@@ -539,7 +539,7 @@ export default function ProductTable() {
                                     </div>
                                 </div>
 
-                                <div className="w-[18.6%]">
+                                <div className="w-[5%]">
                                     <button
                                         onClick={(e) => { e.preventDefault(); handleSearch(); }}
                                         type="submit"
@@ -1195,7 +1195,7 @@ export default function ProductTable() {
                                         </div>
                                     ))}
 
-                                    <button type="button" onClick={addDetailItem}>+ Thêm chi tiết</button>
+                                    <button type="button" onClick={addDetailItem}>+ Thêm phân sản phẩm con</button>
                                 </>
                             )}
 

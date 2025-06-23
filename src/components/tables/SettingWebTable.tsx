@@ -28,7 +28,7 @@ const initialForm = {
     banner: '',
     sub_banner: '',
     notification: '',
-    update_by: ''
+    updated_by: ''
 };
 
 export default function SettingWebTable() {
@@ -77,7 +77,7 @@ export default function SettingWebTable() {
 
         try {
             let res;
-            form.update_by = user?.username ?? "Admin";
+            form.updated_by = user?.username ?? "Admin";
             res = await settingWebServices.update(form, getSiteSystem());
 
             if (res.status_code == 200) {

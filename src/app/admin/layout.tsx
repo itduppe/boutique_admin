@@ -45,14 +45,6 @@ export default function AdminLayout({
     );
   }
 
-  if (isLoading) {
-    return (
-      <div className="flex items-center justify-center min-h-screen">
-        <p className="text-lg font-semibold text-gray-500">Đang tải dữ liệu...</p>
-      </div>
-    );
-  }
-
   return (
     <>
       <div className="min-h-screen xl:flex">

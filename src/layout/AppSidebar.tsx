@@ -34,19 +34,19 @@ const othersItems: NavItem[] = [
     name: "Quản lý của hàng",
     icon: <ListIcon />,
     subItems: [
-      { name: "Nội dung thư gửi", path: "/admin/templateMessages", pro: false },
-      { name: "Danh sách sản phẩm", path: "/admin/products", pro: false },
-      { name: "Danh sách đặt hàng", path: "/admin/orders", pro: false },
-      { name: "Danh sách đánh giá SP", path: "/admin/reviews", pro: false }
+      { name: "Duyệt đơn sản phẩm", path: "/admin/orders", pro: false },
     ],
   },
   {
     name: "Quản lý thiết lập",
     icon: <TableIcon />,
     subItems: [
-      { name: "Setting toàn cục Webiste", path: "/admin/settingWeb", pro: false },
+      { name: "Setting thời gian sự kiện", path: "/admin/sesstionsPoint", pro: false },
+      { name: "Setting sản phẩm", path: "/admin/products", pro: false },
+      { name: "Setting Nội dung thư gửi", path: "/admin/templateMessages", pro: false },
+      { name: "Danh sách đánh giá SP", path: "/admin/reviews", pro: false },
       { name: "Kiểm tra khách hàng", path: "/admin/customer", pro: false },
-      { name: "Setting thời gian sự kiện", path: "/admin/sesstionsPoint", pro: false }
+      { name: "Setting toàn cục Webiste", path: "/admin/settingWeb", pro: false },
     ],
   },
 ];

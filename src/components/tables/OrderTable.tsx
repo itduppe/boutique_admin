@@ -239,7 +239,7 @@ export default function OrderTable() {
 
     return (
         <>
-            <div className="overflow-hidden rounded-xl border border-gray-200 bg-white dark:border-white/[0.05] dark:bg-white/[0.03]">
+            <div className="overflow-hidden rounded-xl border border-gray-200 bg-white dark:border-white/[0.05] dark:bg-white/[0.03] !min-h-[80vh]">
                 <div className="m-5 flex items-center">
                     <div className="text-2xl">Quản lý đơn hàng | </div>
                     {Object.entries(information.order_status).map(([key, label]) => (
@@ -402,7 +402,7 @@ export default function OrderTable() {
                         <Table>
                             <TableHeader className="border-b border-gray-100 dark:border-white/[0.05]">
                                 <TableRow>
-                                    {["STT", "Sản phẩm", "Tài khoản", "Tên người nhận", "Điện thoại", "Địa chỉ", "TG Đăng Ký", "IP", "Trạng Thái", "Hành Động"].map((header, idx) => (
+                                    {["STT", "Sản phẩm", "Tài khoản", "Tên người nhận", "Điện thoại", "Địa chỉ", "TG Đăng Ký", "TG Xác nhận", "IP", "Trạng Thái", "Hành Động"].map((header, idx) => (
                                         <TableCell
                                             key={idx}
                                             isHeader
@@ -430,9 +430,8 @@ export default function OrderTable() {
                                         <TableCell className="px-4 py-3 text-gray-500 text-theme-sm dark:text-gray-400">{order.address}</TableCell>
                                         <TableCell className="px-4 py-3 text-gray-500 text-start text-theme-sm dark:text-gray-400">{formatDateTimeVN(order.createdAt)}</TableCell>
                                         <TableCell className="px-4 py-3 text-gray-500 text-theme-sm dark:text-gray-400">{formatDateTimeVN(order.updatedAt)}</TableCell>
+                                        <TableCell className="px-4 py-3 text-gray-500 text-theme-sm dark:text-gray-400"> Đang cập nhật </TableCell>
                                         <TableCell className="px-4 py-3 text-gray-500 text-theme-sm dark:text-gray-400">{order.status}</TableCell>
-
-
                                         <TableCell className="px-4 py-3 text-gray-500 text-theme-sm dark:text-gray-400 relative">
                                             <div className="flex justify-center items-center gap-2">
                                                 {/* Dropdown sửa trạng thái */}
