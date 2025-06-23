@@ -2,7 +2,14 @@ import path from "path";
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
-  // reactStrictMode: true, // bật nếu muốn
+  reactStrictMode: false,
+  output: 'export',
+  images: {
+    unoptimized: true
+  },
+  eslint: {
+    ignoreDuringBuilds: true,
+  },
   webpack(config) {
     // Alias để dùng @ thay cho src
     config.resolve.alias = {

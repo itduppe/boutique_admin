@@ -29,7 +29,7 @@ export const information = {
 
   type_message: {
     deny: "Thông báo từ chối",
-    success: "Thông báo thành công",
+    allow: "Thông báo thành công",
   },
 
   role: {

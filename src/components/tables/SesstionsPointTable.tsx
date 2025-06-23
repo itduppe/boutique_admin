@@ -11,16 +11,31 @@ import {
 import { useMultiModal } from "@/hooks/useMultiModal";
 import { Modal } from "../ui/modal";
 import Button from "../ui/button/Button";
-import Input from "../form/input/InputField";
 import Label from "../form/Label";
 import sessionPointServices from '@/services/sessionPointServices';
-import TextArea from "../form/input/TextArea";
 import { useAuth } from "@/context/AuthContext";
 import DatePicker from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";
-import { getSiteSystem, setSiteSystem } from "@/utils/storage";
+import { getSiteSystem } from "@/utils/storage";
 
-const initialForm = {
+interface SessionPoint {
+    _id: string;
+    start_timestamp: number;
+    end_timestamp: number;
+    created_by: string;
+    updated_by: string;
+    // thêm các trường nếu có
+}
+
+interface FormState {
+    site: string | null;
+    start_timestamp: number;
+    end_timestamp: number;
+    created_by: string;
+    updated_by: string;
+}
+
+const initialForm: FormState = {
     site: getSiteSystem(),
     start_timestamp: 0,
     end_timestamp: 0,
@@ -29,15 +44,15 @@ const initialForm = {
 };
 
 export default function SesstionsPointTable() {
-    const [data, setData] = useState([]);
+    const [data, setData] = useState<SessionPoint[]>([]);
     const { user } = useAuth();
     const [currentPage, setCurrentPage] = useState(1);
     const [itemsPerPage, setItemsPerPage] = useState(10);
     const { isOpen, modalType, openModal, closeModal } = useMultiModal();
-    const [form, setForm] = useState(initialForm);
+    const [form, setForm] = useState<FormState>(initialForm);
     const [error, setError] = useState('');
     const [loading, setLoading] = useState(false);
-    const [editSessionId, setEditSessionId] = useState(null);
+    const [editSessionId, setEditSessionId] = useState<string | null>(null);
 
     useEffect(() => {
         if (isOpen) {
@@ -45,27 +60,26 @@ export default function SesstionsPointTable() {
         }
     }, [isOpen, modalType]);
 
-    const handleSave = async (e) => {
-        e.preventDefault();
+    const handleSave = async () => {
         setError('');
         setLoading(true);
 
         try {
             let res;
-            form.created_by = user.username ?? "Admin";
             if (modalType === "add") {
+                form.created_by = user?.username ?? "Admin";
                 res = await sessionPointServices.postSession(form);
-                if (res.status_code == 200) {
+                if (res.status_code === 200) {
                     alert(res.message);
                     closeModal();
                     fetchSesstionsPoint();
                 } else {
                     alert(res.message);
                 }
-            } else if (modalType === "update") {
-                form.updated_by = user.username ?? "Admin";
+            } else if (modalType === "update" && editSessionId) {
+                form.updated_by = user?.username ?? "Admin";
                 res = await sessionPointServices.updateSession(form, editSessionId);
-                if (res.status_code == 200) {
+                if (res.status_code === 200) {
                     alert(res.message);
                     closeModal();
                     fetchSesstionsPoint();
@@ -80,7 +94,7 @@ export default function SesstionsPointTable() {
         }
     };
 
-    const deleteSesstionPoint = async (id) => {
+    const deleteSesstionPoint = async (id: string) => {
         setError('');
         setLoading(true);
 
@@ -95,7 +109,7 @@ export default function SesstionsPointTable() {
         }
     };
 
-    const handleDateChange = (date, name) => {
+    const handleDateChange = (date: Date | null, name: keyof FormState) => {
         const timestamp = date ? date.getTime() : 0;
         setForm(prev => ({
             ...prev,
@@ -115,23 +129,20 @@ export default function SesstionsPointTable() {
             const sesstionsPoint = await sessionPointServices.getAll(params);
             setData(sesstionsPoint.data);
             setCurrentPage(sesstionsPoint.page);
-            setItemsPerPage(sesstionsPoint.total);
+            // Chú ý: nếu sesstionsPoint.total là tổng số bản ghi, không nên set vào itemsPerPage
+            // setItemsPerPage(sesstionsPoint.total); 
         } catch (err) {
             toast.error("Danh sách bình luận bị lỗi !");
         }
     };
 
-    const fetchSesstionId = async (id) => {
+    const fetchSesstionId = async (id: string) => {
         try {
             const sessionPoint = await sessionPointServices.getById(id);
 
-            const formattedStartTimestamp = formatTimestamp(sessionPoint.data.start_timestamp);
-            const formattedEndTimestamp = formatTimestamp(sessionPoint.data.end_timestamp);
             setForm(prev => ({
                 ...prev,
                 ...sessionPoint.data,
-                // start_timestamp: formattedStartTimestamp,
-                // end_timestamp: formattedEndTimestamp,
                 updated_by: user?.username ?? "ADMIN",
             }));
 
@@ -141,7 +152,7 @@ export default function SesstionsPointTable() {
         }
     };
 
-    const formatTimestamp = (timestamp) => {
+    const formatTimestamp = (timestamp: number) => {
         if (!timestamp) return '';
         return new Intl.DateTimeFormat('vi-VN', {
             day: '2-digit',
@@ -238,7 +249,7 @@ export default function SesstionsPointTable() {
                         </h4>
                     </div>
 
-                    <form className="flex flex-col">
+                    <form className="flex flex-col" onSubmit={e => e.preventDefault()}>
                         <div className="custom-scrollbar h-[450px] overflow-y-auto pt-5 px-2 pb-3">
                             <>
                                 {/* Thời gian bắt đầu */}
@@ -273,7 +284,7 @@ export default function SesstionsPointTable() {
                             <Button size="sm" variant="outline" onClick={closeModal}>
                                 Đóng
                             </Button>
-                            <Button size="sm" onClick={handleSave}>
+                            <Button size="sm" onClick={handleSave} disabled={loading}>
                                 {loading ? 'Đang xử lý...' : 'Lưu thông tin'}
                             </Button>
                         </div>

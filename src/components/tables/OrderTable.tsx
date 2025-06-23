@@ -9,19 +9,10 @@ import {
 } from "../ui/table";
 
 import { useMultiModal } from "@/hooks/useMultiModal";
-import { Modal } from "../ui/modal";
-import Button from "../ui/button/Button";
-import Input from "../form/input/InputField";
-import Label from "../form/Label";
-import { EyeCloseIcon, EyeIcon } from "@/icons";
 import orderServices from '@/services/orderServices';
-import { Dropdown } from "../ui/dropdown/Dropdown";
-import { DropdownItem } from "../ui/dropdown/DropdownItem";
-import { getSiteSystem, setSiteSystem } from "@/utils/storage";
+import { getSiteSystem } from "@/utils/storage";
 import { information } from '@/utils/info.const';
 import DatePicker from '@/components/form/date-picker';
-
-import TextArea from "../form/input/TextArea";
 
 const initialForm = {
     product_id: '',
@@ -33,17 +24,63 @@ const initialForm = {
     created_by: 'ADMIN'
 }
 
+interface OrderStatus {
+    id: string;
+    status: string;
+}
+
+interface Filters {
+    username?: string;
+    phone_number?: string;
+    address?: string;
+    full_name?: string;
+    product_id?: string;
+    from_date?: string;
+    to_date?: string;
+    status?: string;
+    page: number;
+    pageSize: number;
+}
+
+interface OrderStatusCount {
+    allSuccess: number;
+    allPending: number;
+    allConfirm: number;
+    allShipped: number;
+    allDeny: number;
+}
+
+export interface Order {
+    _id: string;
+    product_id: string;
+    product_name: string;
+    color: string;
+    size: string;
+    username: string;
+    full_name: string;
+    phone_number: string;
+    address: string;
+    createdAt: string | Date;
+    updatedAt: string | Date;
+    status: string;
+}
+
 export default function OrderTable() {
-    const [data, setData] = useState([]);
-    const [countData, setCountData] = useState([]);
+    const [data, setData] = useState<Order[]>([]);
+    const [countData, setCountData] = useState<OrderStatusCount>({
+        allSuccess: 0,
+        allPending: 0,
+        allConfirm: 0,
+        allShipped: 0,
+        allDeny: 0,
+    });
     const [currentPage, setCurrentPage] = useState(1);
     const [itemsPerPage, setItemsPerPage] = useState(10);
     const { isOpen, modalType, openModal, closeModal } = useMultiModal();
     const [form, setForm] = useState(initialForm);
     const [error, setError] = useState('');
     const [loading, setLoading] = useState(false);
-    const [editOrderId, setEditOrderId] = useState(null);
-    const [filters, setFilters] = useState({
+    const [filters, setFilters] = useState<Filters>({
         from_date: "",
         to_date: "",
         username: "",
@@ -55,12 +92,12 @@ export default function OrderTable() {
         page: 1,
         pageSize: 10
     });
-    const [showMenu, setShowMenu] = useState(null);
+    const menuRefs = useRef<Record<string, HTMLDivElement | null>>({});
+    const [showMenu, setShowMenu] = useState<string | null>(null);
     const totalPages = Math.ceil(itemsPerPage / filters.pageSize);
     const startIndex = (currentPage - 1) * itemsPerPage;
     const endIndex = startIndex + itemsPerPage;
     const pagedData = data.slice(startIndex, endIndex);
-    const menuRefs = useRef({});
 
     useEffect(() => {
         if (isOpen) {
@@ -68,7 +105,7 @@ export default function OrderTable() {
         }
     }, [isOpen, modalType]);
 
-    const deleteOrder = async (id) => {
+    const deleteOrder = async (id: string) => {
         try {
             await orderServices.delete(id);
             fetchOrders();
@@ -77,7 +114,7 @@ export default function OrderTable() {
         }
     };
 
-    const handleChange = (e) => {
+    const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
         const { name, value } = e.target;
 
         setForm((prev) => ({
@@ -134,8 +171,9 @@ export default function OrderTable() {
             link.remove();
             window.URL.revokeObjectURL(url);
 
-        } catch (error) {
-            toast.error(error.message || 'Xuất Excel thất bại');
+        } catch (error: unknown) {
+            const msg = error instanceof Error ? error.message : 'Xuất Excel thất bại';
+            toast.error(msg);
         }
     };
 
@@ -156,7 +194,7 @@ export default function OrderTable() {
         }
     };
 
-    const updateOrderStatus = async (orderStatus) => {
+    const updateOrderStatus = async (orderStatus: OrderStatus) => {
         try {
             const res = await orderServices.updateStatusById(orderStatus);
 
@@ -183,17 +221,16 @@ export default function OrderTable() {
     }, [filters]);
 
     useEffect(() => {
-        const handleClickOutside = (event) => {
+        const handleClickOutside = (event: MouseEvent) => {
+            if (showMenu === null) return;
+
             const currentRef = menuRefs.current[showMenu];
-            if (currentRef && !currentRef.contains(event.target)) {
+            if (currentRef && !currentRef.contains(event.target as Node)) {
                 setShowMenu(null);
             }
         };
 
-        if (showMenu !== null) {
-            document.addEventListener("mousedown", handleClickOutside);
-        }
-
+        document.addEventListener("mousedown", handleClickOutside);
         return () => {
             document.removeEventListener("mousedown", handleClickOutside);
         };
@@ -410,7 +447,9 @@ export default function OrderTable() {
                                                     {showMenu === order._id && (
                                                         <div
                                                             className="absolute right-0 z-20 mt-2 w-40 origin-top-right rounded-md bg-white shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none"
-                                                            ref={menuRefs}
+                                                            ref={(el) => {
+                                                                menuRefs.current[order._id] = el;
+                                                            }}
                                                         >
                                                             <div className="py-1">
                                                                 {Object.entries(information.order_status).map(([key, label]) => (
@@ -452,7 +491,7 @@ export default function OrderTable() {
                                 name="pageSize"
                                 value={filters.pageSize}
                                 onChange={(e) => {
-                                    const newPageSize = e.target.value;
+                                    const newPageSize = Number(e.target.value);
                                     setFilters((prev) => ({ ...prev, pageSize: newPageSize, page: 1 }));
                                 }}
                                 className="h-10 w-30 appearance-none rounded-lg border border-gray-300 px-4 py-1"

@@ -1,8 +1,7 @@
 "use client";
 import Image from "next/image";
-import React, { useEffect, useState } from "react";
+import React, {  useState } from "react";
 import { Dropdown } from "../ui/dropdown/Dropdown";
-import { DropdownItem } from "../ui/dropdown/DropdownItem";
 import { logoutHelper } from '@/utils/helper';
 import { useRouter } from 'next/navigation';
 import { useAuth } from "@/context/AuthContext";

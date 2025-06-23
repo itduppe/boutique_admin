@@ -21,15 +21,21 @@ export default function SignInForm() {
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
 
-  const handleChange = (e) => {
+  const handleChange = (e: React.FormEvent<HTMLInputElement>) => {
+    const target = e.target as HTMLInputElement;
+
     setForm((prev) => ({
       ...prev,
-      [e.target.name]: e.target.value,
+      [target.name]: target.value,
     }));
   };
 
-  const handleChangeSelectSystem = (e, value) => {
-    const { name } = e.target;
+  const handleChangeSelectSystem = (
+    e: React.SyntheticEvent<Element, Event>,
+    value: any
+  ) => {
+    const target = e.target as HTMLInputElement;
+    const name = target.name;
 
     setForm((prev) => ({
       ...prev,
@@ -37,7 +43,7 @@ export default function SignInForm() {
     }));
   };
 
-  const handleSubmit = async (e) => {
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setError('');
     setLoading(true);
@@ -55,7 +61,7 @@ export default function SignInForm() {
         toast.error(res.message);
       }
     } catch (err) {
-      setError('Đăng nhập thất bại. Vui lòng kiểm tra thông tin.');
+      setError((err as Error).message);
     } finally {
       setTimeout(() => {
         setLoading(false);
@@ -78,7 +84,6 @@ export default function SignInForm() {
 
             <form onSubmit={handleSubmit}>
               <div className="space-y-6">
-                <Input type="hidden" name="site" value="F168" onChange={handleChange} />
                 <div>
                   <Label>
                     Email <span className="text-error-500">*</span>{" "}
@@ -88,8 +93,7 @@ export default function SignInForm() {
                     type="text"
                     name="username"
                     value={form.username}
-                    onChange={handleChange}
-                    required />
+                    onChange={handleChange} />
                 </div>
                 <div>
                   <Label>

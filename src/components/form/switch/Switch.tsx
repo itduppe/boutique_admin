@@ -4,25 +4,23 @@ import React from "react";
 interface SwitchProps {
   label: string;
   name?: string;
-  checked?: boolean;
+  checked: boolean;
   disabled?: boolean;
-  onChange?: (checked: boolean, name?: string) => void;
+  onChange: (checked: boolean, name?: string) => void;
   color?: "blue" | "gray";
 }
 
 const Switch: React.FC<SwitchProps> = ({
   label,
   name,
-  checked = false, // now only receives from props
+  checked,
   disabled = false,
   onChange,
   color = "blue",
 }) => {
   const handleToggle = () => {
     if (disabled) return;
-    if (onChange) {
-      onChange(!checked, name); // Toggle from prop value
-    }
+    onChange(!checked, name);
   };
 
   const switchColors =

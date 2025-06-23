@@ -31,8 +31,18 @@ const initialForm = {
     updated_by: ''
 };
 
+interface Review {
+  _id: string;
+  username: string;
+  content: string;
+  status: boolean;
+  location: number;
+  createdAt: string;
+  updatedAt: string;
+}
+
 export default function ReviewTable() {
-    const [data, setData] = useState([]);
+    const [data, setData] = useState<Review[]>([]);
     const { user } = useAuth();
     const [currentPage, setCurrentPage] = useState(1);
     const [itemsPerPage, setItemsPerPage] = useState(10);
@@ -41,7 +51,7 @@ export default function ReviewTable() {
     const [form, setForm] = useState(initialForm);
     const [error, setError] = useState('');
     const [loading, setLoading] = useState(false);
-    const [editReviewId, setEditReviewId] = useState(null);
+    const [editReviewId, setEditReviewId] = useState<string | null>(null);
     const [filters, setFilters] = useState({
         username: '',
     });
@@ -52,14 +62,14 @@ export default function ReviewTable() {
         }
     }, [isOpen, modalType]);
 
-    const handleSave = async (e) => {
+    const handleSave = async (e: React.FormEvent<HTMLFormElement>) => {
         e.preventDefault();
         setError('');
         setLoading(true);
 
         try {
             let res;
-            form.created_by = user.username ?? "Admin";
+            form.created_by = user?.username ?? "Admin";
             form.site = getSiteSystem();
 
             if (modalType === "add") {
@@ -71,7 +81,7 @@ export default function ReviewTable() {
                     toast.error(res.message);
                 }
             } else if (modalType === "update") {
-                form.updated_by = user.username ?? "Admin";
+                form.updated_by = user?.username ?? "Admin";
                 res = await reviewServices.updateReview(form, editReviewId);
 
                 if (res.status_code == 200) {
@@ -89,7 +99,7 @@ export default function ReviewTable() {
         }
     };
 
-    const deleteReview = async (id) => {
+    const deleteReview = async (id: string) => {
         setError('');
         setLoading(true);
 
@@ -103,12 +113,16 @@ export default function ReviewTable() {
         }
     };
 
-    const handleChange = (e) => {
-        const { name, type, value, checked } = e.target;
-        let newValue = value;
+    const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
+        const target = e.target;
+        const name = target.name;
+        const value = target.value;
+        const type = target.type;
+        const checked = 'checked' in target ? (target as HTMLInputElement).checked : undefined;
+        let newValue: string | boolean | number = value;
 
         if (name === 'status') {
-            newValue = type === 'checkbox' ? checked : value === 'true';
+            newValue = type === 'checkbox' ? !!checked : value === 'true';
         } else if (name === 'location') {
             newValue = parseInt(value);
         }
@@ -118,13 +132,6 @@ export default function ReviewTable() {
             [name]: newValue,
         }));
     };
-
-    const handleSearch = async () => {
-        const params = {};
-
-        if (filters.username) params.username = filters.username;
-        await fetchReviews(params);
-    }
 
     const fetchReviews = async (searchParams = {}) => {
         try {
@@ -144,7 +151,7 @@ export default function ReviewTable() {
         }
     };
 
-    const fetchReviewId = async (id) => {
+    const fetchReviewId = async (id: string) => {
         try {
             const reviews = await reviewServices.getById(id);
 
@@ -156,7 +163,8 @@ export default function ReviewTable() {
 
             setTimeout(() => openModal("update"), 200);
         } catch (err) {
-            toast.error("Lỗi lấy dữ liệu review", err);
+            const message = err instanceof Error ? err.message : "Lỗi lấy dữ liệu review";
+            toast.error(message);
         }
     }
 
@@ -247,7 +255,7 @@ export default function ReviewTable() {
                         </h4>
                     </div>
 
-                    <form className="flex flex-col">
+                    <form className="flex flex-col" onSubmit={handleSave}>
                         <div className="custom-scrollbar h-[450px] overflow-y-auto px-2 pb-3">
                             <>
                                 <Label>Tên tài khoản</Label>
@@ -283,7 +291,6 @@ export default function ReviewTable() {
                                         type="checkbox"
                                         name="status"
                                         checked={form.status}
-                                        value={form.status}
                                         onChange={handleChange}
                                         className="sr-only peer" />
                                     <div className="relative w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 dark:peer-focus:ring-blue-800 rounded-full peer dark:bg-gray-700 peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-gray-600 peer-checked:bg-blue-600 dark:peer-checked:bg-blue-600"></div>
@@ -316,7 +323,7 @@ export default function ReviewTable() {
                             <Button size="sm" variant="outline" onClick={closeModal}>
                                 Đóng
                             </Button>
-                            <Button size="sm" onClick={handleSave}>
+                            <Button size="sm" type="submit">
                                 {loading ? 'Đang xử lý...' : 'Lưu thông tin'}
                             </Button>
                         </div>

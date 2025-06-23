@@ -15,7 +15,7 @@ import Input from "../form/input/InputField";
 import Label from "../form/Label";
 import ipWhitelistServices from '@/services/ipWhitelistServices';
 import { useAuth } from "@/context/AuthContext";
-import { getSiteSystem, setSiteSystem } from "@/utils/storage";
+import { getSiteSystem } from "@/utils/storage";
 
 const initialForm = {
     ip: '',
@@ -25,14 +25,22 @@ const initialForm = {
     updatedBy: ''
 };
 
+interface IpItem {
+    _id: string;
+    ip: string;
+    createdBy: string;
+    note?: string;
+}
+
 export default function IpWhiteList() {
-    const [userWhitelistIp, setUserWhitelistIp] = useState([]);
+    const [userWhitelistIp, setUserWhitelistIp] = useState<IpItem[]>([]);
     const { isOpen, modalType, openModal, closeModal } = useMultiModal();
     const { user } = useAuth();
     const [form, setForm] = useState(initialForm);
     const [error, setError] = useState('');
     const [loading, setLoading] = useState(false);
-    const [editId, setEditId] = useState(null);
+    const [editId, setEditId] = useState<string | null>(null);
+    const [data, setData] = useState<IpItem[]>([]);
     const [filters, setFilters] = useState({
         ip: '',
     });
@@ -43,14 +51,14 @@ export default function IpWhiteList() {
         }
     }, [isOpen, modalType]);
 
-    const handleSave = async (e) => {
+    const handleSave = async (e: React.FormEvent<HTMLFormElement>) => {
         e.preventDefault();
         setError('');
         setLoading(true);
 
         try {
             let res;
-            form.createdBy = user.username ?? "Admin";
+            form.createdBy = user?.username ?? "Admin";
 
             if (modalType === "add") {
                 res = await ipWhitelistServices.postIpWhitelist(form);
@@ -61,7 +69,7 @@ export default function IpWhiteList() {
                     toast.error(res.data.message)
                 }
             } else if (modalType === "update") {
-                form.updatedBy = user.username ?? "Admin";
+                form.updatedBy = user?.username ?? "Admin";
                 res = await ipWhitelistServices.changeIpWhitelist(form, editId);
 
                 if (res.status_code == 200) {
@@ -79,7 +87,7 @@ export default function IpWhiteList() {
         }
     };
 
-    const deleteIP = async (id) => {
+    const deleteIP = async (id: string) => {
         setError('');
         setLoading(true);
 
@@ -93,19 +101,12 @@ export default function IpWhiteList() {
         }
     };
 
-    const handleChange = (e) => {
+    const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
         setForm((prev) => ({
             ...prev,
             [e.target.name]: e.target.value,
         }));
     };
-
-    const handleSearch = async () => {
-        const params = {};
-
-        if (filters.ip) params.ip = filters.ip;
-        await fetchIpWhiteList(params);
-    }
 
     const fetchIpWhiteList = async (searchParams = {}) => {
         try {
@@ -202,7 +203,7 @@ export default function IpWhiteList() {
                         </h4>
                     </div>
 
-                    <form className="flex flex-col">
+                    <form className="flex flex-col" onSubmit={handleSave}>
                         <div className="custom-scrollbar h-[450px] overflow-y-auto px-2 pb-3">
                             <Label>IP</Label>
                             <Input
@@ -229,7 +230,7 @@ export default function IpWhiteList() {
                             <Button size="sm" variant="outline" onClick={closeModal}>
                                 Đóng
                             </Button>
-                            <Button size="sm" onClick={handleSave}>
+                            <Button size="sm" type="submit">
                                 {loading ? 'Đang xử lý...' : 'Lưu thông tin'}
                             </Button>
                         </div>

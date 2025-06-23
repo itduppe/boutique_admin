@@ -31,17 +31,33 @@ const initialForm = {
     created_by: ''
 };
 
+interface MessageItem {
+  _id: string;
+  title: string;
+  product_id: string;
+  content: string;
+  note: string;
+  type_message: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+interface Product {
+  product_id: string;
+  name: string;
+}
+
 export default function TemplateMessagesTable() {
-    const [data, setData] = useState([]);
+    const [data, setData] = useState<MessageItem[]>([]);
     const { user } = useAuth();
-    const [dataProducts, setProducsData] = useState([]);
+    const [dataProducts, setProducsData] = useState<Product[]>([]);
     const [currentPage, setCurrentPage] = useState(1);
     const [itemsPerPage, setItemsPerPage] = useState(10);
     const { isOpen, modalType, openModal, closeModal } = useMultiModal();
     const [form, setForm] = useState(initialForm);
     const [error, setError] = useState('');
     const [loading, setLoading] = useState(false);
-    const [editMessageId, setEditMessageId] = useState(null);
+    const [editMessageId, setEditMessageId] = useState<string | null>(null);
     const [filters, setFilters] = useState({
         username: '',
     });
@@ -52,7 +68,7 @@ export default function TemplateMessagesTable() {
         }
     }, [isOpen, modalType]);
 
-    const handleSave = async (e) => {
+    const handleSave = async (e: React.FormEvent<HTMLFormElement>) => {
         e.preventDefault();
         setError('');
         setLoading(true);
@@ -60,7 +76,7 @@ export default function TemplateMessagesTable() {
         try {
             let res;
             if (modalType === "add") {
-                form.created_by = user.username ?? "Admin";
+                form.created_by = user?.username ?? "Admin";
                 res = await templateMessageServices.postMessage(form);
                 if (res.status_code == 200) {
                     closeModal();
@@ -69,7 +85,7 @@ export default function TemplateMessagesTable() {
                     alert(res.message)
                 }
             } else if (modalType === "update") {
-                form.updated_by = user.username ?? "Admin";
+                form.created_by = user?.username ?? "Admin";
                 res = await templateMessageServices.update(form, editMessageId);
 
                 if (res.status_code == 200) {
@@ -87,7 +103,7 @@ export default function TemplateMessagesTable() {
         }
     };
 
-    const deleteMessage = async (id) => {
+    const deleteMessage = async (id : string) => {
         setError('');
         setLoading(true);
 
@@ -102,7 +118,7 @@ export default function TemplateMessagesTable() {
         }
     };
 
-    const handleChange = (e) => {
+    const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
         const { name, value } = e.target;
 
         setForm((prev) => ({
@@ -110,13 +126,6 @@ export default function TemplateMessagesTable() {
             [name]: value,
         }));
     };
-
-    const handleSearch = async () => {
-        const params = {};
-
-        if (filters.username) params.username = filters.username;
-        await fetchMessages(params);
-    }
 
     const fetchMessages = async (searchParams = {}) => {
         try {
@@ -152,7 +161,7 @@ export default function TemplateMessagesTable() {
         }
     };
 
-    const fetchMessageId = async (id) => {
+    const fetchMessageId = async (id : string) => {
         try {
             const templateMessage = await templateMessageServices.getById(id);
             setForm(prev => ({
@@ -256,7 +265,7 @@ export default function TemplateMessagesTable() {
                         </h4>
                     </div>
 
-                    <form className="flex flex-col">
+                    <form className="flex flex-col" onSubmit={handleSave}>
                         <div className="custom-scrollbar h-[450px] overflow-y-auto px-2 pb-3">
                             <>
                                 <Label>Tên tài khoản</Label>
@@ -264,7 +273,7 @@ export default function TemplateMessagesTable() {
                                     name="product_id"
                                     className={`h-11 w-full appearance-none rounded-lg border border-gray-300  px-4 py-2.5 pr-11 text-sm shadow-theme-xs placeholder:text-gray-400 focus:border-brand-300 focus:outline-hidden focus:ring-3 focus:ring-brand-500/10 dark:border-gray-700 dark:bg-gray-900 dark:text-white/90 dark:placeholder:text-white/30 dark:focus:border-brand-800`}
                                     value={form.product_id}
-                                    onChange={(e) => handleChange(e, e.target.value)}
+                                    onChange={(e) => handleChange(e)}
                                 >
                                     <option value="">-- Chọn sản phẩm --</option>
                                     {dataProducts.map((product, index) => (
@@ -310,7 +319,7 @@ export default function TemplateMessagesTable() {
                                     name="type_message"
                                     className={`h-11 w-full appearance-none rounded-lg border border-gray-300  px-4 py-2.5 pr-11 text-sm shadow-theme-xs placeholder:text-gray-400 focus:border-brand-300 focus:outline-hidden focus:ring-3 focus:ring-brand-500/10 dark:border-gray-700 dark:bg-gray-900 dark:text-white/90 dark:placeholder:text-white/30 dark:focus:border-brand-800`}
                                     value={form.type_message}
-                                    onChange={(e) => handleChange(e, e.target.value)}
+                                    onChange={(e) => handleChange(e)}
                                 >
                                     <option value="">-- Chọn sản phẩm --</option>
 
@@ -327,7 +336,7 @@ export default function TemplateMessagesTable() {
                             <Button size="sm" variant="outline" onClick={closeModal}>
                                 Đóng
                             </Button>
-                            <Button size="sm" onClick={handleSave}>
+                            <Button size="sm" type="submit">
                                 {loading ? 'Đang xử lý...' : 'Lưu thông tin'}
                             </Button>
                         </div>

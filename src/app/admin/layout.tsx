@@ -1,6 +1,5 @@
 "use client";
 
-import Cookies from "js-cookie";
 import React, { useState, useEffect } from "react";
 import { useSidebar } from "@/context/SidebarContext";
 import AppHeader from "@/layout/AppHeader";

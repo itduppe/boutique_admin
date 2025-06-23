@@ -49,7 +49,7 @@ const orderServices = {
         }
     },
 
-    deleteList: async (id) => {
+    deleteList: async () => {
         try {
             const res = await UserApi.post("/orders/delete-many");
             toast.success("Xóa danh sách đơn hàng thành công!");

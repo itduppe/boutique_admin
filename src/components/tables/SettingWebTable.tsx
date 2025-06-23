@@ -6,10 +6,11 @@ import Button from "../ui/button/Button";
 import Input from "../form/input/InputField";
 import Label from "../form/Label";
 import settingWebServices from '@/services/settingWebServices';
-import { getSiteSystem, setSiteSystem } from "@/utils/storage";
+import { getSiteSystem } from "@/utils/storage";
 import { useAuth } from "@/context/AuthContext";
 
 const initialForm = {
+    _id: null,
     site: getSiteSystem(),
     time_zone: '',
     created_by: '',
@@ -27,13 +28,14 @@ const initialForm = {
     banner: '',
     sub_banner: '',
     notification: '',
-    update_by: '' 
+    update_by: ''
 };
 
 export default function SettingWebTable() {
     const { user } = useAuth();
     const { isOpen, modalType, openModal, closeModal } = useMultiModal();
-    const [form, setForm] = useState(initialForm);
+    type SettingForm = typeof initialForm;
+    const [form, setForm] = useState<SettingForm>(initialForm);
     const [error, setError] = useState('');
     const [loading, setLoading] = useState(false);
     const [editSettingId, setEditSettingId] = useState(null);
@@ -47,17 +49,17 @@ export default function SettingWebTable() {
         }
     }, [isOpen, modalType]);
 
-    const handleAdd = async (e) => {
+    const handleAdd = async (e: React.FormEvent<HTMLFormElement>) => {
         e.preventDefault();
         setError('');
         setLoading(true);
 
         try {
             let res;
-            form.created_by = user.username ?? "Admin";
+            form.created_by = user?.username ?? "Admin";
             res = await settingWebServices.postSetting(form);
             if (res.status_code == 200) {
-                fetchSettingWeb(getSiteSystem());
+                fetchSettingWeb(getSiteSystem() || "");
             } else {
                 alert(res.message)
             }
@@ -69,17 +71,17 @@ export default function SettingWebTable() {
         }
     };
 
-    const handleUpdate = async (e) => {
+    const handleUpdate = async (e: React.FormEvent<HTMLFormElement>) => {
         e.preventDefault();
         setError('');
 
         try {
             let res;
-            form.updated_by = user.username ?? "Admin";
+            form.update_by = user?.username ?? "Admin";
             res = await settingWebServices.update(form, getSiteSystem());
 
             if (res.status_code == 200) {
-                fetchSettingWeb(getSiteSystem());
+                fetchSettingWeb(getSiteSystem() || "");
             } else {
                 toast.error(res.message)
             }
@@ -88,17 +90,21 @@ export default function SettingWebTable() {
         }
     };
 
-    const deleteSetting = async (site) => {
+    const deleteSetting = async (site: string) => {
         try {
             await settingWebServices.delete(site);
-            fetchSettingWeb(getSiteSystem());
+            fetchSettingWeb(getSiteSystem() || "");
         } catch (err) {
             setError('Xóa người dùng thất bại. Vui lòng kiểm tra thông tin.');
         }
     };
 
-    const handleChange = (e) => {
-        const { name, value, type, checked } = e.target;
+    const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
+        const target = e.target;
+        const name = target.name;
+        const value = target.value;
+        const type = target.type;
+        const checked = 'checked' in target ? (target as HTMLInputElement).checked : undefined;
 
         setForm((prev) => ({
             ...prev,
@@ -108,7 +114,7 @@ export default function SettingWebTable() {
         }));
     };
 
-    const fetchSettingWeb = async (site) => {
+    const fetchSettingWeb = async (site: string) => {
         try {
             const settingWeb = await settingWebServices.getBySite(site);
 
@@ -121,9 +127,8 @@ export default function SettingWebTable() {
         }
     }
 
-
     useEffect(() => {
-        fetchSettingWeb(getSiteSystem());
+        fetchSettingWeb(getSiteSystem() || "");
     }, []);
 
     return (
@@ -137,7 +142,16 @@ export default function SettingWebTable() {
                         </h4>
                     </div>
 
-                    <form className="flex flex-col">
+                    <form className="flex flex-col"
+                        onSubmit={(e) => {
+                            e.preventDefault();
+                            if (form._id) {
+                                handleUpdate(e);
+                            } else {
+                                handleAdd(e);
+                            }
+                        }}
+                    >
                         <div className="custom-scrollbar h-[100%] overflow-y-auto px-2 pb-3">
                             <br />
                             <div className="grid md:grid-cols-2 md:gap-6">
@@ -160,7 +174,6 @@ export default function SettingWebTable() {
                                             name="site_active"
                                             className="sr-only peer"
                                             checked={form.site_active}
-                                            value={form.site_active}
                                             onChange={handleChange}
                                         />
                                         <div className="relative w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 
@@ -349,15 +362,9 @@ export default function SettingWebTable() {
                                 Xóa thiết lập
                             </Button>
 
-                            {form._id ? (
-                                <Button size="sm" onClick={handleUpdate}>
-                                    {loading ? 'Đang xử lý...' : 'Sửa thông tin'}
-                                </Button>
-                            ) : (
-                                <Button size="sm" onClick={handleAdd}>
-                                    {loading ? 'Đang xử lý...' : 'Lưu thông tin'}
-                                </Button>
-                            )}
+                            <Button size="sm" type="submit">
+                                {loading ? 'Đang xử lý...' : 'Lưu thông tin'}
+                            </Button>
                         </div>
                     </form>
                 </div>

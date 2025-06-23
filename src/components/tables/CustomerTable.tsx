@@ -11,29 +11,53 @@ import {
 import { useMultiModal } from "@/hooks/useMultiModal";
 import { Modal } from "../ui/modal";
 import Button from "../ui/button/Button";
-import Input from "../form/input/InputField";
-import Label from "../form/Label";
-import { EyeCloseIcon, EyeIcon } from "@/icons";
 import customerServices from '@/services/customerServices';
 import { useAuth } from "@/context/AuthContext";
-import { getSiteSystem, setSiteSystem } from "@/utils/storage";
+import { getSiteSystem } from "@/utils/storage";
 
 const initialForm = {
     site: getSiteSystem(),
     username: ''
 };
 
+interface Filters {
+    username: string;
+    pageSize: number;
+    page: number;
+}
+
+interface Customer {
+    username: string;
+    phone_number: string;
+    updatedAt: string;
+    status: boolean;
+    site: string;
+    point: number;
+}
+
+interface History {
+  username: string;
+  site: string;
+  type: string;
+  createdAt: string;
+  updatedAt: string;
+  note: string;
+}
+
 export default function Customer() {
-    const [data, setData] = useState([]);
-    const [dataHistories, setDataHistories] = useState([]);
+    const [data, setData] = useState<Customer[]>([]);
+    const [dataHistories, setDataHistories] = useState<History[]>([]);
     const { user } = useAuth();
     const [currentPage, setCurrentPage] = useState(1);
     const [itemsPerPage, setItemsPerPage] = useState(10);
     const { isOpen, modalType, openModal, closeModal } = useMultiModal();
     const [form, setForm] = useState(initialForm);
+    const [loading, setLoading] = React.useState(false);
     const [error, setError] = useState('');
-    const [filters, setFilters] = useState({
+    const [filters, setFilters] = React.useState<Filters>({
         username: '',
+        pageSize: 10,
+        page: 1,
     });
     const totalPages = Math.ceil(itemsPerPage / filters.pageSize);
     const startIndex = (currentPage - 1) * itemsPerPage;
@@ -46,41 +70,14 @@ export default function Customer() {
         }
     }, [isOpen, modalType]);
 
-    const handleSave = async (e) => {
-        e.preventDefault();
-        setError('');
-        setLoading(true);
-
-        try {
-            let res;
-            if (modalType === "add") {
-
-            } else if (modalType === "changePass") {
-
-            }
-
-        } catch (err) {
-            setError('Thao tác thất bại. Vui lòng kiểm tra thông tin.');
-        } finally {
-            setLoading(false);
-        }
-    };
-
-    const handleChange = (e) => {
-        setForm((prev) => ({
-            ...prev,
-            [e.target.name]: e.target.value,
-        }));
-    };
-
     const handleSearch = async () => {
-        const params = {};
+        const params: { username?: string } = {};
 
         if (filters.username) params.username = filters.username;
         await fetchCustomers(params);
     }
 
-    const updateCustomerStatus = async (username, site) => {
+    const updateCustomerStatus = async (username: string, site: string) => {
         try {
             await customerServices.updateStatus(username, site);
 
@@ -92,7 +89,7 @@ export default function Customer() {
         }
     };
 
-    const findHistoryCustomer = async (username, site) => {
+    const findHistoryCustomer = async (username: string, site: string) => {
         try {
             const res = await customerServices.findHistories(username, site);
             setDataHistories(res.data);
@@ -220,7 +217,7 @@ export default function Customer() {
                                 value={filters.pageSize}
                                 onChange={(e) => {
                                     const newPageSize = e.target.value;
-                                    setFilters((prev) => ({ ...prev, pageSize: newPageSize, page: 1 }));
+                                    setFilters((prev) => ({ ...prev, pageSize:Number(newPageSize), page: 1 }));
                                 }}
                                 className="h-10 w-30 appearance-none rounded-lg border border-gray-300 px-4 py-1"
                             >

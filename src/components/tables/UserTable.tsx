@@ -15,21 +15,31 @@ import Input from "../form/input/InputField";
 import Label from "../form/Label";
 import { EyeCloseIcon, EyeIcon } from "@/icons";
 import userServices from '@/services/userServices';
-import { useAuth } from "@/context/AuthContext";
 import { getSiteSystem, setSiteSystem } from "@/utils/storage";
 import { information } from '@/utils/info.const';
 
 const initialForm = {
-    ip: '',
-    note: '',
+    username: '',
+    password: '',
+    oldPassword: '',
+    status: true,
     site: getSiteSystem(),
     createdBy: '',
     updatedBy: ''
 };
 
+type UserType = {
+  _id: string;
+  username: string;
+  site: string;
+  role: string;
+  status: boolean;
+  createdAt: string;
+  updatedAt: string;
+};
+
 export default function UserTable() {
-    const { user } = useAuth();
-    const [data, setData] = useState([]);
+    const [data, setData] = useState<UserType[]>([]);
     const [currentPage, setCurrentPage] = useState(1);
     const [itemsPerPage, setItemsPerPage] = useState(10);
     const { isOpen, modalType, openModal, closeModal } = useMultiModal();
@@ -37,9 +47,11 @@ export default function UserTable() {
     const [form, setForm] = useState(initialForm);
     const [error, setError] = useState('');
     const [loading, setLoading] = useState(false);
-    const [editUserId, setEditUserId] = useState(null);
+    const [editUserId, setEditUserId] = useState<string | null>(null);
     const [filters, setFilters] = useState({
         username: '',
+        page: 1,
+        pageSize: 10,
     });
     const totalPages = Math.ceil(itemsPerPage / filters.pageSize);
     const startIndex = (currentPage - 1) * itemsPerPage;
@@ -52,7 +64,7 @@ export default function UserTable() {
         }
     }, [isOpen, modalType]);
 
-    const handleSave = async (e) => {
+    const handleSave = async (e: React.FormEvent<HTMLFormElement>) => {
         e.preventDefault();
         setError('');
         setLoading(true);
@@ -67,7 +79,7 @@ export default function UserTable() {
                 } else {
                     setError(res.message)
                 }
-            } else if (modalType === "changePass") {
+            } else if (modalType?.trim() === "changePass") {
                 res = await userServices.changePasswordUser(form, editUserId);
 
                 if (res.status_code == 200) {
@@ -85,7 +97,7 @@ export default function UserTable() {
         }
     };
 
-    const updateUserStatus = async (id) => {
+    const updateUserStatus = async (id: string) => {
         setError('');
         setLoading(true);
 
@@ -100,7 +112,7 @@ export default function UserTable() {
         }
     };
 
-    const updateRole = async (id, role) => {
+    const updateRole = async (id: string, role: string) => {
         setError('');
         setLoading(true);
 
@@ -115,13 +127,13 @@ export default function UserTable() {
         }
     };
 
-    const deleteUser = async (id) => {
+    const deleteUser = async (id: string) => {
         setError('');
         setLoading(true);
 
         try {
-            await userServices.deleteUser(id);
-            toast.success(userServices.message);
+            const res = await userServices.deleteUser(id);
+            toast.success(res.message);
             fetchUsers();
         } catch (err) {
             setError('Xóa người dùng thất bại. Vui lòng kiểm tra thông tin.');
@@ -130,7 +142,7 @@ export default function UserTable() {
         }
     };
 
-    const handleChange = (e) => {
+    const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
         setForm((prev) => ({
             ...prev,
             [e.target.name]: e.target.value,
@@ -245,7 +257,7 @@ export default function UserTable() {
                                             >
                                                 <option value="">-- Phân quyền --</option>
                                                 {Object.entries(information.role).map(([key, label]) => (
-                                                    <option key={key} value={key} selected={form.key === user.role}>
+                                                    <option key={key} value={key} selected={key === user.role}>
                                                         {label}
                                                     </option>
                                                 ))}
@@ -292,7 +304,7 @@ export default function UserTable() {
                                 name="pageSize"
                                 value={filters.pageSize}
                                 onChange={(e) => {
-                                    const newPageSize = e.target.value;
+                                    const newPageSize = Number(e.target.value);
                                     setFilters((prev) => ({ ...prev, pageSize: newPageSize, page: 1 }));
                                 }}
                                 className="h-10 w-30 appearance-none rounded-lg border border-gray-300 px-4 py-1"
@@ -360,7 +372,7 @@ export default function UserTable() {
                         </h4>
                     </div>
 
-                    <form className="flex flex-col">
+                    <form className="flex flex-col" onSubmit={handleSave}>
                         <div className="custom-scrollbar h-[450px] overflow-y-auto px-2 pb-3">
                             {modalType === "add" && (
                                 <>
@@ -418,7 +430,7 @@ export default function UserTable() {
                                         <select
                                             name="site"
                                             className={`h-11 w-full appearance-none rounded-lg border border-gray-300  px-4 py-2.5 pr-11 text-sm shadow-theme-xs placeholder:text-gray-400 focus:border-brand-300 focus:outline-hidden focus:ring-3 focus:ring-brand-500/10 dark:border-gray-700 dark:bg-gray-900 dark:text-white/90 dark:placeholder:text-white/30 dark:focus:border-brand-800`}
-                                            value={form.site}
+                                            value={form.site ?? ""}
                                             onChange={(e) => handleChange(e)}
                                         >
                                             <option value="">-- Chọn hệ thống --</option>
@@ -440,7 +452,7 @@ export default function UserTable() {
                             <Button size="sm" variant="outline" onClick={closeModal}>
                                 Đóng
                             </Button>
-                            <Button size="sm" onClick={handleSave}>
+                            <Button size="sm" type="submit">
                                 {loading ? 'Đang xử lý...' : 'Lưu thông tin'}
                             </Button>
                         </div>

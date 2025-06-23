@@ -25,8 +25,6 @@ const ipWhitelistServices = {
     },
 
     postIpWhitelist: async (credentials) => {
-        const now = new Date();
-
         try {
             const res = await UserApi.post("/ip_whitelist", credentials);
             toast.success(res.data.message);

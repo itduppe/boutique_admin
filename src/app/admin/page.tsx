@@ -1,9 +1,7 @@
 "use client";
 
 import type { Metadata } from "next";
-import React, { useEffect, useState } from "react";
-import { redirect, useRouter } from 'next/navigation';
-import { useAuth } from "@/context/AuthContext";
+import React from "react";
 
 // export const metadata: Metadata = {
 //   title:

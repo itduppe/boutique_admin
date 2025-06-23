@@ -83,7 +83,6 @@ const userServices = {
     deleteUser: async (id) => {
         try {
             const res = await UserApi.delete(`/users/${id}`);
-            toast.success("Xóa người dùng thành công!");
             return res.data;
         } catch (error) {
             return handleError(error, "Lỗi khi xóa người dùng");

@@ -23,10 +23,62 @@ import ContentEditor from "../form/input/ContentEditor";
 
 import "react-datepicker/dist/react-datepicker.css";
 import { useAuth } from "@/context/AuthContext";
-import { getSiteSystem, setSiteSystem } from "@/utils/storage";
+import { getSiteSystem } from "@/utils/storage";
 import Switch from "../form/switch/Switch";
 
-const initialForm = {
+interface ConditionPoint {
+    status: boolean;
+    point: number;
+}
+
+interface ConditionDonate {
+    status: boolean;
+    point: number;
+    money: number;
+    current_money: number;
+    max_money: number;
+    end_timestamp: number;
+}
+
+interface TimeCondition {
+    status: boolean;
+    start_timestamp: number;
+    end_timestamp: number;
+}
+
+interface Conditions {
+    take_after_day: number;
+    take_before_product: string;
+    stock_auto_update: number;
+    total_bet: number;
+    total_deposit: number;
+    times_deposit: number;
+    level_vip: number;
+    time_condition: TimeCondition;
+}
+
+interface FormType {
+    site: string | null;
+    product_id: string;
+    product_tag: string;
+    product_type: string;
+    name: string;
+    image_main: string;
+    image_details: string[];
+    content: string;
+    description: string;
+    location: number;
+    status: boolean;
+    created_by: string;
+    type_register: string[];
+    condition_point: ConditionPoint;
+    condition_donate: ConditionDonate;
+    conditions: Conditions;
+    details: any[];
+    updated_by: string;
+}
+
+const initialForm: FormType = {
     site: getSiteSystem(),
     product_id: '',
     product_tag: 'in_stock',
@@ -42,7 +94,7 @@ const initialForm = {
     type_register: [],
     condition_point: {
         status: true,
-        point: 0
+        point: 0,
     },
     condition_donate: {
         status: true,
@@ -50,7 +102,7 @@ const initialForm = {
         money: 0,
         current_money: 0,
         max_money: 0,
-        end_timestamp: 0
+        end_timestamp: 0,
     },
     conditions: {
         take_after_day: 0,
@@ -63,15 +115,26 @@ const initialForm = {
         time_condition: {
             status: true,
             start_timestamp: 0,
-            end_timestamp: 0
-        }
+            end_timestamp: 0,
+        },
     },
     details: [],
     updated_by: '',
 };
 
+interface Product {
+  _id: string;
+  name: string;
+  product_id: string;
+  description: string;
+  status: boolean;
+  location: number;
+  createdAt: string;
+  updatedAt: string;
+}
+
 export default function ProductTable() {
-    const [data, setData] = useState([]);
+    const [data, setData] = useState<Product[]>([]);
     const { user } = useAuth();
     const [currentPage, setCurrentPage] = useState(1);
     const [itemsPerPage, setItemsPerPage] = useState(10);
@@ -79,7 +142,7 @@ export default function ProductTable() {
     const [form, setForm] = useState(initialForm);
     const [error, setError] = useState('');
     const [loading, setLoading] = useState(false);
-    const [editProductId, setEditProductId] = useState(null);
+    const [editProductId, setEditProductId] = useState<string | null>(null);
     const [filters, setFilters] = useState({
         page: 1,
         pageSize: 10,
@@ -91,7 +154,6 @@ export default function ProductTable() {
         created_by: '',
         status: true
     });
-    const [endDateDonate, setEndDateDonate] = useState(new Date());
     const totalPages = Math.ceil(itemsPerPage / filters.pageSize);
     const startIndex = (currentPage - 1) * itemsPerPage;
     const endIndex = startIndex + itemsPerPage;
@@ -103,7 +165,7 @@ export default function ProductTable() {
         }
     }, [editProductId]);
 
-    const fetchDataById = async (id) => {
+    const fetchDataById = async (id: string) => {
         try {
             setLoading(true);
             const res = await productServices.getById(id);
@@ -122,7 +184,7 @@ export default function ProductTable() {
         }
     }, [isOpen, modalType]);
 
-    const handleSave = async (e) => {
+    const handleSave = async (e: React.FormEvent<HTMLFormElement>) => {
         e.preventDefault();
         setError('');
         setLoading(true);
@@ -131,7 +193,7 @@ export default function ProductTable() {
             let res;
 
             if (modalType === "add") {
-                form.created_by = user.username ?? "Admin";
+                form.created_by = user?.username ?? "Admin";
                 res = await productServices.postProduct(form);
 
                 if (res.status_code != 200) {
@@ -140,7 +202,7 @@ export default function ProductTable() {
             }
             else
                 if (modalType === "update") {
-                    form.updated_by = user.username ?? "Admin";
+                    form.updated_by = user?.username ?? "Admin";
                     res = await productServices.update(form, editProductId);
 
                     if (res.status_code != 200)
@@ -151,13 +213,13 @@ export default function ProductTable() {
             fetchProducts();
 
         } catch (err) {
-            setError('Thao tác thất bại. Vui lòng kiểm tra thông tin.');
+            setError('Thao tác thất bại. Vui lòng kiểm tra thông tin.' + err);
         } finally {
             setLoading(false);
         }
     };
 
-    const deleteProduct = async (id) => {
+    const deleteProduct = async (id: string) => {
         setError('');
         setLoading(true);
 
@@ -165,15 +227,21 @@ export default function ProductTable() {
             await productServices.delete(id);
             fetchProducts();
         } catch (err) {
-            setError('Xóa bình luận thất bại. Vui lòng kiểm tra thông tin.');
+            setError('Xóa bình luận thất bại. Vui lòng kiểm tra thông tin.' + err);
         } finally {
             setLoading(false);
         }
     };
 
-    const handleChange = (e) => {
-        e.preventDefault();
-        const { name, value, type, checked } = e.target;
+    const handleChange = (
+        e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>
+    ) => {
+        const target = e.target;
+        const name = target.name;
+        const value = target.value;
+        const type = target.type;
+        const checked = 'checked' in target ? (target as HTMLInputElement).checked : undefined;
+
         if (name === "type_register") {
             setForm((prev) => {
                 const currentArray = prev[name] || [];
@@ -218,13 +286,13 @@ export default function ProductTable() {
         }
     };
 
-    const handleDateChange = (date, name) => {
+    const handleDateChange = (date: Date | null, name: string) => {
         const timestamp = date ? date.getTime() : 0;
 
         setForm(prev => setNestedValue(prev, name, timestamp));
     };
 
-    const handleDetailChange = (index, field, value) => {
+    const handleDetailChange = (index: number, field: string, value: any) => {
         const newDetails = [...form.details];
         newDetails[index][field] = value;
         setForm({ ...form, details: newDetails });
@@ -246,13 +314,13 @@ export default function ProductTable() {
         });
     }
 
-    const removeDetailItem = (index) => {
+    const removeDetailItem = (index: number) => {
         const newDetails = form.details.filter((_, i) => i !== index);
         setForm({ ...form, details: newDetails });
     };
 
-    const autoCastValue = (name, value) => {
-        const intFields = [
+    const autoCastValue = (name: string, value: any): any => {
+        const intFields: string[] = [
             'location',
             'condition_point.point',
             'condition_donate.point',
@@ -311,7 +379,7 @@ export default function ProductTable() {
         }
     };
 
-    const fetchProductId = async (id) => {
+    const fetchProductId = async (id: string) => {
         try {
             const product = await productServices.getById(id);
             setForm(prev => ({
@@ -448,14 +516,11 @@ export default function ProductTable() {
                                         <select
                                             id="status"
                                             name="status"
-                                            value={filters.status === '' ? '' : filters.status ? 'true' : 'false'}
+                                            value={filters.status === true ? 'true' : filters.status === false ? 'false' : ''}
                                             onChange={(e) => {
-                                                const value = e.target.value;
                                                 setFilters({
                                                     ...filters,
-                                                    status: value === '' ? '' : value === 'true'
-                                                        ? true
-                                                        : false
+                                                    status: e.target.value === 'true',
                                                 });
                                             }}
                                             className="h-11 w-full appearance-none rounded-lg border border-gray-300 px-4 py-2.5 pr-11"
@@ -543,7 +608,7 @@ export default function ProductTable() {
                                 name="pageSize"
                                 value={filters.pageSize}
                                 onChange={(e) => {
-                                    const newPageSize = e.target.value;
+                                    const newPageSize = Number(e.target.value);
                                     setFilters((prev) => ({ ...prev, pageSize: newPageSize, page: 1 }));
                                 }}
                                 className="h-10 w-30 appearance-none rounded-lg border border-gray-300 px-4 py-1"
@@ -611,7 +676,7 @@ export default function ProductTable() {
                         </h4>
                     </div>
 
-                    <form className="flex flex-col no-scrollbar">
+                    <form className="flex flex-col no-scrollbar" onSubmit={handleSave}>
                         <div className="custom-scrollbar h-[600px] overflow-y-auto px-2 pb-3">
                             <h2>Thông tin chính: </h2>
 
@@ -652,7 +717,7 @@ export default function ProductTable() {
                                              dark:border-gray-700 dark:bg-gray-900 dark:text-white/90 dark:placeholder:text-white/30
                                               dark:focus:border-brand-800`}
                                         value={form.product_tag}
-                                        onChange={(e) => handleChange(e, e.target.value)}
+                                        onChange={(e) => handleChange(e)}
                                     >
                                         <option value="">-- Chọn trạng thái --</option>
                                         {Object.entries(information.product_tag).map(([key, label]) => (
@@ -673,7 +738,7 @@ export default function ProductTable() {
                                              dark:border-gray-700 dark:bg-gray-900 dark:text-white/90 dark:placeholder:text-white/30
                                               dark:focus:border-brand-800`}
                                         value={form.product_type}
-                                        onChange={(e) => handleChange(e, e.target.value)}
+                                        onChange={(e) => handleChange(e)}
                                     >
                                         <option value="">-- Chọn trạng thái --</option>
                                         {Object.entries(information.product_type).map(([key, label]) => (
@@ -953,7 +1018,7 @@ export default function ProductTable() {
                                 <Switch
                                     label="status"
                                     name="conditions.stock_auto_update"
-                                    checked={form.conditions.stock_auto_update}
+                                    checked={Boolean(form.conditions.stock_auto_update)}
                                     onChange={(checked, name) => {
                                         setForm({
                                             ...form,
@@ -1111,7 +1176,7 @@ export default function ProductTable() {
                             <Button size="sm" variant="outline" onClick={closeModal}>
                                 Đóng
                             </Button>
-                            <Button size="sm" onClick={handleSave}>
+                            <Button size="sm" type="submit">
                                 {loading ? 'Đang xử lý...' : 'Lưu thông tin'}
                             </Button>
                         </div>

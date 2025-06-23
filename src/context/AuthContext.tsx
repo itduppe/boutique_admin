@@ -26,7 +26,18 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   useEffect(() => {
     const decoded = getDecodedToken();
 
-    if (decoded) setUser(decoded);
+    if (decoded) {
+      const user: User = {
+        id: (decoded as any).id,
+        username: (decoded as any).username,
+        role: (decoded as any).role,
+        site: (decoded as any).site,
+      };
+      setUser(user);
+    } else {
+      setUser(null);
+    }
+
     setIsLoading(false);
   }, []);
 
