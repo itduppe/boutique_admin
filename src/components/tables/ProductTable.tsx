@@ -79,6 +79,7 @@ interface FormType {
     conditions: Conditions;
     details: any[];
     updated_by: string;
+    send_message: boolean
 }
 
 const initialForm: FormType = {
@@ -95,6 +96,7 @@ const initialForm: FormType = {
     status: true,
     created_by: '',
     type_register: [],
+    send_message: true,
     condition_point: {
         status: true,
         point: 0,
@@ -263,7 +265,7 @@ export default function ProductTable() {
         }
 
         if (name === "image_details") {
-            const urls = value
+            const urls = String(value)
                 .split('|')
                 .map((v) => v.trim())
                 .filter((v) => v.length > 0);
@@ -360,7 +362,7 @@ export default function ProductTable() {
             ...(product_type && { product_type }),
             ...(product_tag && { product_tag }),
             ...(created_by && { created_by }),
-            ...(status && { status }),
+            ...(typeof status !== 'undefined' ? { status } : { status: false }),
             page,
             pageSize,
             site: getSiteSystem()
@@ -382,7 +384,7 @@ export default function ProductTable() {
             setCurrentPage(products.page);
             setItemsPerPage(products.total);
         } catch (err) {
-            toast.error("Danh sách bình luận bị lỗi !");
+            toast.error("Danh sách lỗi !");
         }
     };
 
@@ -461,24 +463,6 @@ export default function ProductTable() {
                                         />
                                     </div>
                                 </div>
-
-                                {/* <div className="w-[16.6%]">
-                                    <label htmlFor="created_by" className="sr-only">Người tạo</label>
-                                    <div className="relative w-full">
-                                        <select
-                                            id="created_by"
-                                            name="created_by"
-                                            value={filters.created_by}
-                                            onChange={(e) => setFilters({ ...filters, created_by: e.target.value })}
-                                            className="h-11 w-full appearance-none rounded-lg border border-gray-300 px-4 py-2.5 pr-11"
-                                        >
-                                            <option value="">-- Người tạo --</option>
-                                            {Object.entries(information.role).map(([key, label]) => (
-                                                <option key={key} value={key}>{label}</option>
-                                            ))}
-                                        </select>
-                                    </div>
-                                </div> */}
 
                                 {/* Trạng thái sản phẩm */}
                                 <div className="w-[16.6%]">
@@ -581,7 +565,9 @@ export default function ProductTable() {
                                         <TableCell className="px-4 py-3 text-gray-500 text-start text-theme-sm dark:text-gray-400">{products.name}</TableCell>
                                         <TableCell className="px-4 py-3 text-gray-500 text-start text-theme-sm dark:text-gray-400">{products.product_id}</TableCell>
                                         <TableCell className="px-4 py-3 text-gray-500 text-start text-theme-sm dark:text-gray-400">{products.description}</TableCell>
-                                        <TableCell className="px-4 py-3 text-gray-500 text-theme-sm dark:text-gray-400">{products.status ? "Hiển thị" : "Tạm ẩn"}</TableCell>
+                                        <TableCell className="px-4 py-3 text-theme-sm dark:text-gray-400 text-center text-white">
+                                            {products.status ? (<div className="bg-green-600"> Hiển thị</div>) : (<div className="bg-red-500">Tạm ẩn</div>)}
+                                        </TableCell>
                                         <TableCell className="px-4 py-3 text-gray-500 text-theme-sm dark:text-gray-400">{products.location}</TableCell>
                                         <TableCell className="px-4 py-3 text-gray-500 text-start text-theme-sm dark:text-gray-400">{formatDateTimeVN(products.createdAt)}</TableCell>
                                         <TableCell className="px-4 py-3 text-gray-500 text-theme-sm dark:text-gray-400">{formatDateTimeVN(products.updatedAt)}</TableCell>
@@ -777,7 +763,7 @@ export default function ProductTable() {
                                     <Input
                                         type="text"
                                         placeholder="Danh sách ảnh phụ"
-                                        value={form.image_details}
+                                        value={Array.isArray(form.image_details) ? form.image_details.join('|') : ''}
                                         name="image_details"
                                         onChange={handleChange}
                                     />
@@ -835,7 +821,7 @@ export default function ProductTable() {
                                 <div className="col-md-5">
                                     <Label>Trạng thái hiển thị sản phẩm trên website: </Label>
                                     <Switch
-                                        label="status"
+                                        label=""
                                         name="status"
                                         checked={form.status}
                                         onChange={(checked, name) => {
@@ -849,7 +835,25 @@ export default function ProductTable() {
                             </div>
                             <br />
 
-                            <h2>Điều kiện đăng ký nhận quà: </h2>
+                            <div className="grid md:grid-cols-2 md:gap-6">
+                                <div className="col-md-5">
+                                    <Label>Gửi thư thông báo: </Label>
+                                    <Switch
+                                        label=""
+                                        name="send_message"
+                                        checked={form.send_message}
+                                        onChange={(checked, name) => {
+                                            setForm({
+                                                ...form,
+                                                send_message: checked
+                                            });
+                                        }}
+                                    />
+                                </div>
+                            </div>
+                            <br />
+
+                            <h2 className="text-red-500">Phương thức nhận quà: </h2>
                             <div className="flex gap-8">
                                 {Object.entries(information.product_type_register).map(([key, label]) => (
                                     <div key={key} className="flex items-center gap-3 py-2">
@@ -878,10 +882,10 @@ export default function ProductTable() {
                             </div>
                             <br />
 
-                            <h2>Đăng ký theo điểm: </h2>
+                            <h2 className="text-red-500">Cấu hình phương thức nhận theo điểm: </h2>
                             <div className="grid md:grid-cols-2 md:gap-6">
                                 <div className="col-md-8">
-                                    <Label>Điểm</Label>
+                                    <Label>Điểm: </Label>
                                     <Input
                                         type="number"
                                         placeholder="Nhập số điểm"
@@ -892,10 +896,10 @@ export default function ProductTable() {
                                 </div>
 
                                 <div className="col-md-5">
-                                    <Label>Trạng thái áp dụng điểm thưởng: </Label>
+                                    <Label>Trạng thái: </Label>
 
                                     <Switch
-                                        label="Checked"
+                                        label=""
                                         name="condition_point.status"
                                         checked={form.condition_point.status}
                                         onChange={(checked, name) => {
@@ -911,7 +915,7 @@ export default function ProductTable() {
                                 </div>
                             </div>
                             <br />
-                            <h2>Đăng ký từ thiện: </h2>
+                            <h2 className="text-red-500">Cấu hình từ thiện: </h2>
                             <div className="grid md:grid-cols-2 md:gap-6">
                                 <div className="col-md-8">
                                     <Label>Điểm</Label>
@@ -925,9 +929,9 @@ export default function ProductTable() {
                                 </div>
 
                                 <div className="col-md-5">
-                                    <Label>Trạng thái áp dụng điểm thưởng: </Label>
+                                    <Label>Trạng thái: </Label>
                                     <Switch
-                                        label="status"
+                                        label=""
                                         name="condition_donate.status"
                                         checked={form.condition_donate.status}
                                         onChange={(checked, name) => {
@@ -992,7 +996,7 @@ export default function ProductTable() {
                             </div>
                             <br />
 
-                            <h2>Đăng ký thủ công: </h2>
+                            <h2 className="text-red-500">Cấu hình phương thức nhận theo điều kiện: </h2>
                             <br />
 
                             <div className="grid md:grid-cols-2 md:gap-6">
@@ -1020,10 +1024,10 @@ export default function ProductTable() {
                             <br />
 
                             <div className="col-md-5">
-                                <Label>Tự động update Số lượng sản phẩm: </Label>
+                                <Label>Tự động cập nhật số lượng mỗi ngày ( Áp dụng với GiftCode ) </Label>
 
                                 <Switch
-                                    label="status"
+                                    label=""
                                     name="conditions.stock_auto_update"
                                     checked={Boolean(form.conditions.stock_auto_update)}
                                     onChange={(checked, name) => {
@@ -1065,7 +1069,7 @@ export default function ProductTable() {
 
                             <div className="grid md:grid-cols-2 md:gap-6">
                                 <div className="col-md-8">
-                                    <Label>Có thể nhận thưởng sau bao nhiêu ngày ( Tổng nạp ): </Label>
+                                    <Label>Có thể nhận sau bao nhiêu ngày: </Label>
                                     <Input
                                         type="number"
                                         placeholder="Số ngày"
@@ -1115,7 +1119,7 @@ export default function ProductTable() {
                             <div className="col-md-5">
                                 <Label>Áp dụng thời gian cho tổng nạp: </Label>
                                 <Switch
-                                    label="status"
+                                    label=""
                                     name="conditions.time_condition.status"
                                     checked={form.conditions.time_condition.status}
                                     onChange={(checked, name) => {

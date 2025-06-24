@@ -33,19 +33,19 @@ const initialForm = {
 };
 
 interface MessageItem {
-  _id: string;
-  title: string;
-  product_id: string;
-  content: string;
-  note: string;
-  type_message: string;
-  createdAt: string;
-  updatedAt: string;
+    _id: string;
+    title: string;
+    product_id: string;
+    content: string;
+    note: string;
+    type_message: string;
+    createdAt: string;
+    updatedAt: string;
 }
 
 interface Product {
-  product_id: string;
-  name: string;
+    product_id: string;
+    name: string;
 }
 
 export default function TemplateMessagesTable() {
@@ -104,7 +104,7 @@ export default function TemplateMessagesTable() {
         }
     };
 
-    const deleteMessage = async (id : string) => {
+    const deleteMessage = async (id: string) => {
         setError('');
         setLoading(true);
 
@@ -142,7 +142,7 @@ export default function TemplateMessagesTable() {
             setCurrentPage(review.page);
             setItemsPerPage(review.total);
         } catch (err) {
-            toast.error("Danh sách bình luận bị lỗi !");
+            toast.error("Danh sách lỗi !");
         }
     };
 
@@ -158,11 +158,11 @@ export default function TemplateMessagesTable() {
             const products = await productServices.getAll(params);
             setProducsData(products.data);
         } catch (err) {
-            toast.error("Danh sách bình luận bị lỗi !");
+            toast.error("Danh sách lỗi !");
         }
     };
 
-    const fetchMessageId = async (id : string) => {
+    const fetchMessageId = async (id: string) => {
         try {
             const templateMessage = await templateMessageServices.getById(id);
             setForm(prev => ({
@@ -226,7 +226,9 @@ export default function TemplateMessagesTable() {
                                         <TableCell className="px-4 py-3 text-gray-500 text-start text-theme-sm dark:text-gray-400">{message.product_id}</TableCell>
                                         <TableCell className="px-4 py-3 text-gray-500 text-start text-theme-sm dark:text-gray-400">{message.content}</TableCell>
                                         <TableCell className="px-4 py-3 text-gray-500 text-theme-sm dark:text-gray-400">{message.note}</TableCell>
-                                        <TableCell className="px-4 py-3 text-gray-500 text-theme-sm dark:text-gray-400">{message.type_message}</TableCell>
+                                        <TableCell className="px-4 py-3 text-theme-sm dark:text-gray-400 text-center text-white">
+                                            {message.type_message == "allow" ? (<div className="bg-green-600">Báo thành công</div>) : (<div className="bg-red-500">Báo từ chối</div>)}
+                                        </TableCell>
                                         <TableCell className="px-4 py-3 text-gray-500 text-start text-theme-sm dark:text-gray-400">{formatDateTimeVN(message.createdAt)}</TableCell>
                                         <TableCell className="px-4 py-3 text-gray-500 text-theme-sm dark:text-gray-400">{formatDateTimeVN(message.updatedAt)}</TableCell>
                                         <TableCell className="px-4 py-3 text-gray-500 text-theme-sm dark:text-gray-400">

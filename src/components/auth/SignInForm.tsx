@@ -12,14 +12,16 @@ import { useRouter } from 'next/navigation';
 import authServices from '@/services/authServices';
 import { information } from '@/utils/info.const';
 import { toast } from "react-toastify";
+import { useAuth } from "@/context/AuthContext";
 
 export default function SignInForm() {
   const [showPassword, setShowPassword] = useState(false);
   const [isChecked, setIsChecked] = useState(false);
   const router = useRouter();
-  const [form, setForm] = useState({ username: '', password: '', site: '' });
+  const [form, setForm] = useState({ username: '', password: '', site: 'f168' });
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+  const { refreshUser } = useAuth();
 
   const handleChange = (e: React.FormEvent<HTMLInputElement>) => {
     const target = e.target as HTMLInputElement;
@@ -50,13 +52,15 @@ export default function SignInForm() {
 
     try {
       const res = await authServices.login(form);
-      localStorage.setItem("site-system", form.site);
-      Cookies.set("token", res.data, { expires: 0.5, path: '/' });
+      localStorage.setItem("site-system", 'f168');
+      Cookies.set("token", res.data, { expires: 1, path: '/' });
+
+      refreshUser();
 
       if (res.status_code == 200 && res.data) {
         setTimeout(() => {
           router.push("/admin");
-        }, 1000);
+        }, 500);
       } else {
         toast.error(res.message);
       }
@@ -120,7 +124,7 @@ export default function SignInForm() {
                   </div>
                 </div>
 
-                <div>
+                {/* <div>
                   <Label>
                     System <span className="text-error-500">*</span>{" "}
                   </Label>
@@ -140,7 +144,7 @@ export default function SignInForm() {
 
                     </select>
                   </div>
-                </div>
+                </div> */}
 
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-3">

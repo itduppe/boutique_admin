@@ -33,13 +33,13 @@ const initialForm = {
 };
 
 interface Review {
-  _id: string;
-  username: string;
-  content: string;
-  status: boolean;
-  location: number;
-  createdAt: string;
-  updatedAt: string;
+    _id: string;
+    username: string;
+    content: string;
+    status: boolean;
+    location: number;
+    createdAt: string;
+    updatedAt: string;
 }
 
 export default function ReviewTable() {
@@ -148,7 +148,7 @@ export default function ReviewTable() {
             setCurrentPage(review.page);
             setItemsPerPage(review.total);
         } catch (err) {
-            toast.error("Danh sách bình luận bị lỗi !");
+            toast.error("Danh sách lỗi !");
         }
     };
 
@@ -215,7 +215,9 @@ export default function ReviewTable() {
                                         <TableCell className="px-5 py-4 sm:px-6 text-start">{index + 1}</TableCell>
                                         <TableCell className="px-4 py-3 text-gray-500 text-start text-theme-sm dark:text-gray-400">{review.username}</TableCell>
                                         <TableCell className="px-4 py-3 text-gray-500 text-start text-theme-sm dark:text-gray-400">{review.content}</TableCell>
-                                        <TableCell className="px-4 py-3 text-gray-500 text-theme-sm dark:text-gray-400">{review.status ? "Hiển thị" : "Tạm ẩn"}</TableCell>
+                                        <TableCell className="px-4 py-3 text-theme-sm dark:text-gray-400 text-center text-white">
+                                            {review.status ? (<div className="bg-green-600"> Hiển thị</div>) : (<div className="bg-red-500">Tạm ẩn</div>)}
+                                        </TableCell>
                                         <TableCell className="px-4 py-3 text-gray-500 text-theme-sm dark:text-gray-400">{review.location}</TableCell>
                                         <TableCell className="px-4 py-3 text-gray-500 text-start text-theme-sm dark:text-gray-400">{formatDateTimeVN(review.createdAt)}</TableCell>
                                         <TableCell className="px-4 py-3 text-gray-500 text-theme-sm dark:text-gray-400">{formatDateTimeVN(review.updatedAt)}</TableCell>

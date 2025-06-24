@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useEffect } from "react";
 import { useSidebar } from "@/context/SidebarContext";
 import AppHeader from "@/layout/AppHeader";
 import AppSidebar from "@/layout/AppSidebar";
@@ -8,35 +8,27 @@ import Backdrop from "@/layout/Backdrop";
 import { ToastContainer } from "react-toastify";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/context/AuthContext";
-import Cookies from "js-cookie";
 
-export default function AdminLayout({
-  children,
-}: {
-  children: React.ReactNode;
-}) {
+export default function AdminLayout({ children }: { children: React.ReactNode }) {
   const { isExpanded, isHovered, isMobileOpen } = useSidebar();
-  const { user, isLoading, refreshUser } = useAuth();
+  const { user, isLoading } = useAuth();
   const router = useRouter();
 
+  // Xử lý margin layout khi sidebar thay đổi
   const mainContentMargin = isMobileOpen
     ? "ml-0"
     : isExpanded || isHovered
-      ? "lg:ml-[290px]"
-      : "lg:ml-[90px]";
+    ? "lg:ml-[290px]"
+    : "lg:ml-[90px]";
 
+  // Điều hướng nếu không có user sau khi load xong
   useEffect(() => {
-    const token = Cookies.get("token");
-    if (!token) {
-      router.push("/login");
-      return;
-    }
-
     if (!isLoading && !user) {
-      refreshUser();
+      router.replace("/login");
     }
-  }, [isLoading, user, refreshUser, router]);
+  }, [isLoading, user, router]);
 
+  // Trạng thái loading khi chưa có thông tin user
   if (isLoading) {
     return (
       <div className="flex items-center justify-center min-h-screen">
@@ -45,14 +37,15 @@ export default function AdminLayout({
     );
   }
 
+  // Nếu user null (dù đã load) thì tránh render layout
+  if (!user) return null;
+
   return (
     <>
       <div className="min-h-screen xl:flex">
         <AppSidebar />
         <Backdrop />
-        <div
-          className={`flex-1 transition-all duration-300 ease-in-out ${mainContentMargin}`}
-        >
+        <div className={`flex-1 transition-all duration-300 ease-in-out ${mainContentMargin}`}>
           <AppHeader />
           <div className="p-4 mx-auto max-w-screen-2xl md:p-6">{children}</div>
         </div>

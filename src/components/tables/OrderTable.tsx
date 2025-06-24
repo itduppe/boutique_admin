@@ -191,7 +191,7 @@ export default function OrderTable() {
             setCurrentPage(orders.page);
             setItemsPerPage(orders.total);
         } catch (err) {
-            toast.error("Danh sách bình luận bị lỗi !");
+            toast.error("Danh sách lỗi !");
         }
     };
 
@@ -325,7 +325,6 @@ export default function OrderTable() {
                                 </div>
                             </div>
 
-
                             <div className="w-[18.6%]">
                                 <label htmlFor="full_name" className="sr-only">Tên đầy đủ</label>
                                 <div className="relative w-full">
@@ -431,7 +430,13 @@ export default function OrderTable() {
                                         <TableCell className="px-4 py-3 text-gray-500 text-start text-theme-sm dark:text-gray-400">{formatDateTimeVN(order.createdAt)}</TableCell>
                                         <TableCell className="px-4 py-3 text-gray-500 text-theme-sm dark:text-gray-400">{formatDateTimeVN(order.updatedAt)}</TableCell>
                                         <TableCell className="px-4 py-3 text-gray-500 text-theme-sm dark:text-gray-400"> Đang cập nhật </TableCell>
-                                        <TableCell className="px-4 py-3 text-gray-500 text-theme-sm dark:text-gray-400">{order.status}</TableCell>
+
+                                        <TableCell className="px-4 py-3 text-theme-sm dark:text-gray-400 text-center text-white">
+                                            {Object.entries(information.order_status).map(([key, label]) => (
+                                                order.status == key ? <div className="text-white bg-green-500" key={key}>{label}</div> : null
+                                            ))}
+                                        </TableCell>
+                                        
                                         <TableCell className="px-4 py-3 text-gray-500 text-theme-sm dark:text-gray-400 relative">
                                             <div className="flex justify-center items-center gap-2">
                                                 {/* Dropdown sửa trạng thái */}

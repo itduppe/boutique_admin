@@ -22,7 +22,7 @@ export const information = {
 
   product_type_register: {
     point: "Đăng ký theo điểm",
-    manual: "Đăng ký thủ công",
+    manual: "Đăng ký theo điều kiện",
     donate: "Từ thiện",
     telegram: "Telegram"
   },
@@ -35,10 +35,11 @@ export const information = {
   role: {
     user: "User ( Người dùng )",
     admin: "Admin ( Quản trị viên )",
+    superadmin: "Supper Admin ( Quản trị viên )"
   },
 
   order_status: {
-    pending: "Xác nhận hợp lệ",
+    pending: "Chờ xác nhận",
     confirm: "Gửi thư",
     deny: "Từ chối",
     shipped: "Gửi giao hàng",

@@ -26,7 +26,6 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
   const loadUser = () => {
     setIsLoading(true);
-
     const decoded = getDecodedToken();
 
     if (decoded) {
@@ -55,6 +54,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const logout = () => {
     logoutHelper();
     setUser(null);
+    loadUser();
     window.location.href = "/login";
   };
 

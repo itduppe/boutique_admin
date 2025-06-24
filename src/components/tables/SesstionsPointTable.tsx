@@ -18,11 +18,13 @@ import DatePicker from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";
 import { getSiteSystem } from "@/utils/storage";
 import { formatDateTimeVN, toVietnamDate } from "@/utils/formatDateTime";
+import Switch from "../form/switch/Switch";
 
 interface SessionPoint {
     _id: string;
     start_timestamp: number;
     end_timestamp: number;
+    status: boolean,
     created_by: string;
     updated_by: string;
 }
@@ -31,6 +33,7 @@ interface FormState {
     site: string | null;
     start_timestamp: number;
     end_timestamp: number;
+    status: boolean,
     created_by: string;
     updated_by: string;
 }
@@ -39,6 +42,7 @@ const initialForm: FormState = {
     site: getSiteSystem(),
     start_timestamp: 0,
     end_timestamp: 0,
+    status: true,
     created_by: '',
     updated_by: '',
 };
@@ -67,24 +71,23 @@ export default function SesstionsPointTable() {
         try {
             let res;
             if (modalType === "add") {
-                form.created_by = user?.username ?? "Admin";
+                form.created_by = user?.username || "Admin";
                 res = await sessionPointServices.postSession(form);
                 if (res.status_code === 200) {
-                    alert(res.message);
+
                     closeModal();
                     fetchSesstionsPoint();
                 } else {
-                    alert(res.message);
+                    toast.error(res.message);
                 }
             } else if (modalType === "update" && editSessionId) {
-                form.updated_by = user?.username ?? "Admin";
+                form.updated_by = user?.username || "Admin";
                 res = await sessionPointServices.updateSession(form, editSessionId);
                 if (res.status_code === 200) {
-                    alert(res.message);
                     closeModal();
                     fetchSesstionsPoint();
                 } else {
-                    alert(res.message);
+                    toast.error(res.message);
                 }
             }
         } catch (err) {
@@ -130,7 +133,7 @@ export default function SesstionsPointTable() {
             setData(sesstionsPoint.data);
             setCurrentPage(sesstionsPoint.page);
         } catch (err) {
-            toast.error("Danh sách bình luận bị lỗi !");
+            toast.error("Danh sách lỗi !");
         }
     };
 
@@ -140,8 +143,7 @@ export default function SesstionsPointTable() {
 
             setForm(prev => ({
                 ...prev,
-                ...sessionPoint.data,
-                updated_by: user?.username ?? "ADMIN",
+                ...sessionPoint.data
             }));
 
             setTimeout(() => openModal("update"), 200);
@@ -178,7 +180,7 @@ export default function SesstionsPointTable() {
                         <Table>
                             <TableHeader className="border-b border-gray-100 dark:border-white/[0.05]">
                                 <TableRow>
-                                    {["STT", "Thời gian bắt đầu", "Thời gian kết thúc", "Người tạo", "Người chỉnh sửa", "Hành Động"].map((header, idx) => (
+                                    {["STT", "Thời gian bắt đầu", "Thời gian kết thúc", "Người tạo", "Người chỉnh sửa", "Trạng thái", "Hành Động"].map((header, idx) => (
                                         <TableCell
                                             key={idx}
                                             isHeader
@@ -198,6 +200,9 @@ export default function SesstionsPointTable() {
                                         <TableCell className="px-4 py-3 text-gray-500 text-start text-theme-sm dark:text-gray-400">{formatDateTimeVN(sesstionsPoint.end_timestamp)}</TableCell>
                                         <TableCell className="px-4 py-3 text-gray-500 text-start text-theme-sm dark:text-gray-400">{sesstionsPoint.created_by}</TableCell>
                                         <TableCell className="px-4 py-3 text-gray-500 text-start text-theme-sm dark:text-gray-400">{sesstionsPoint.updated_by}</TableCell>
+                                        <TableCell className="px-4 py-3 text-theme-sm dark:text-gray-400 text-center text-white">
+                                            {sesstionsPoint.status ? (<div className="bg-green-600"> Đang diễn ra</div>) : (<div className="bg-red-500">Tạm dừng</div>)}
+                                        </TableCell>
                                         <TableCell className="px-4 py-3 text-gray-500 text-theme-sm dark:text-gray-400">
                                             <div className="flex justify-center gap-2">
                                                 <button
@@ -239,7 +244,7 @@ export default function SesstionsPointTable() {
                         <div className="custom-scrollbar h-[450px] overflow-y-auto pt-5 px-2 pb-3">
                             <>
                                 {/* Thời gian bắt đầu */}
-                                <Label>Thời gian bắt đầu</Label>
+                                <Label>Thời gian bắt đầu :</Label>
                                 <DatePicker
                                     selected={form.start_timestamp ? toVietnamDate(new Date(form.start_timestamp)) : null}
                                     onChange={(date) => handleDateChange(date, "start_timestamp")}
@@ -248,10 +253,10 @@ export default function SesstionsPointTable() {
                                     className="border p-2 rounded w-full lg:min-w-[600px]"
                                     placeholderText="Chọn thời gian bắt đầu"
                                 />
-                                <br />
+                                <br /><br />
 
                                 {/* Thời gian kết thúc */}
-                                <Label>Thời gian kết thúc</Label>
+                                <Label>Thời gian kết thúc :</Label>
                                 <DatePicker
                                     selected={form.end_timestamp ? toVietnamDate(new Date(form.end_timestamp)) : null}
                                     onChange={(date) => handleDateChange(date, "end_timestamp")}
@@ -260,7 +265,20 @@ export default function SesstionsPointTable() {
                                     className="border p-2 rounded w-full lg:min-w-[600px]"
                                     placeholderText="Chọn thời gian kết thúc"
                                 />
-                                <br />
+                                <br /><br />
+                                <Label className="text-red-500">Trạng thái :</Label>
+
+                                <Switch
+                                    label="status"
+                                    name="status"
+                                    checked={form.status}
+                                    onChange={(checked, name) => {
+                                        setForm({
+                                            ...form,
+                                            status: checked
+                                        });
+                                    }}
+                                />
                             </>
 
                             {error && <p className="mt-2 text-sm text-red-500">{error}</p>}

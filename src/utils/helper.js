@@ -1,16 +1,27 @@
 import { jwtDecode } from "jwt-decode";
 import Cookies from "js-cookie";
 
-function getDecodedToken() {
-  if (typeof window === "undefined") return null;
+/**
+ * @typedef {Object} DecodedToken
+ * @property {string} id
+ * @property {string} username
+ * @property {"user" | "admin" | "superadmin"} role
+ * @property {string} [site]
+ * @property {number} [exp]
+ * @property {number} [iat]
+ */
 
+/**
+ * @returns {DecodedToken|null}
+ */
+function getDecodedToken() {
   const token = Cookies.get("token");
   if (!token) return null;
 
   try {
-    const decoded = jwtDecode(token);
-    return decoded;
-  } catch {
+    return jwtDecode(token);
+  } catch (err) {
+    console.error("Invalid token:", err);
     return null;
   }
 }
