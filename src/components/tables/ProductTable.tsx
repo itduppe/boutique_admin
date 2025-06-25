@@ -161,7 +161,9 @@ export default function ProductTable() {
         created_by: '',
         status: true
     });
-    const totalPages = Math.ceil(itemsPerPage / filters.pageSize);
+
+    const [totalItems, setTotalItems] = useState(0)
+    const totalPages = Math.ceil(totalItems / filters.pageSize);
     const startIndex = (currentPage - 1) * itemsPerPage;
     const endIndex = startIndex + itemsPerPage;
     const pagedData = data.slice(startIndex, endIndex);
@@ -386,8 +388,7 @@ export default function ProductTable() {
 
             const products = await productServices.getAll(params);
             setData(products.data);
-            setCurrentPage(products.page);
-            setItemsPerPage(products.total);
+            setTotalItems(products.total);
         } catch (err) {
             toast.error("Danh sách lỗi !");
         }

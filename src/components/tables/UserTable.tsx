@@ -54,7 +54,8 @@ export default function UserTable() {
         page: 1,
         pageSize: 10,
     });
-    const totalPages = Math.ceil(itemsPerPage / filters.pageSize);
+    const [totalItems, setTotalItems] = useState(0)
+    const totalPages = Math.ceil(totalItems / filters.pageSize);
     const startIndex = (currentPage - 1) * itemsPerPage;
     const endIndex = startIndex + itemsPerPage;
     const pagedData = data.slice(startIndex, endIndex);
@@ -174,8 +175,8 @@ export default function UserTable() {
 
             const usersData = await userServices.getUser(params);
             setData(usersData.users);
-            setCurrentPage(usersData.page);
-            setItemsPerPage(usersData.total);
+            setTotalItems(usersData.total);
+
         } catch (err) {
             toast.error("Danh sách người dùng bị lỗi !");
         }
@@ -188,7 +189,7 @@ export default function UserTable() {
 
     useEffect(() => {
         handleSearch();
-    }, [filters]);
+    }, [filters.page, filters.pageSize, filters.username]);
 
     useEffect(() => {
         fetchUsers();

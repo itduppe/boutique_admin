@@ -95,7 +95,8 @@ export default function OrderTable() {
     });
     const menuRefs = useRef<Record<string, HTMLDivElement | null>>({});
     const [showMenu, setShowMenu] = useState<string | null>(null);
-    const totalPages = Math.ceil(itemsPerPage / filters.pageSize);
+    const [totalItems, setTotalItems] = useState(0)
+    const totalPages = Math.ceil(totalItems / filters.pageSize);
     const startIndex = (currentPage - 1) * itemsPerPage;
     const endIndex = startIndex + itemsPerPage;
     const pagedData = data.slice(startIndex, endIndex);
@@ -187,9 +188,7 @@ export default function OrderTable() {
 
             const orders = await orderServices.getAll(params);
             setData(orders.data);
-            setCountData(orders.statusCount);
-            setCurrentPage(orders.page);
-            setItemsPerPage(orders.total);
+            setTotalItems(orders.total);
         } catch (err) {
             toast.error("Danh sách lỗi !");
         }
@@ -436,7 +435,7 @@ export default function OrderTable() {
                                                 order.status == key ? <div className="text-white bg-green-500" key={key}>{label}</div> : null
                                             ))}
                                         </TableCell>
-                                        
+
                                         <TableCell className="px-4 py-3 text-gray-500 text-theme-sm dark:text-gray-400 relative">
                                             <div className="flex justify-center items-center gap-2">
                                                 {/* Dropdown sửa trạng thái */}

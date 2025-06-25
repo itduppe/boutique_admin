@@ -37,12 +37,12 @@ interface Customer {
 }
 
 interface History {
-  username: string;
-  site: string;
-  type: string;
-  createdAt: string;
-  updatedAt: string;
-  note: string;
+    username: string;
+    site: string;
+    type: string;
+    createdAt: string;
+    updatedAt: string;
+    note: string;
 }
 
 export default function Customer() {
@@ -60,7 +60,8 @@ export default function Customer() {
         pageSize: 10,
         page: 1,
     });
-    const totalPages = Math.ceil(itemsPerPage / filters.pageSize);
+    const [totalItems, setTotalItems] = useState(0)
+    const totalPages = Math.ceil(totalItems / filters.pageSize);
     const startIndex = (currentPage - 1) * itemsPerPage;
     const endIndex = startIndex + itemsPerPage;
     const pagedData = data.slice(startIndex, endIndex);
@@ -113,8 +114,7 @@ export default function Customer() {
 
             const customers = await customerServices.getAll(params);
             setData(customers.data);
-            setCurrentPage(customers.page);
-            setItemsPerPage(customers.total);
+            setTotalItems(customers.total);
         } catch (err) {
             toast.error("Danh sách người dùng bị lỗi !");
         }
@@ -218,7 +218,7 @@ export default function Customer() {
                                 value={filters.pageSize}
                                 onChange={(e) => {
                                     const newPageSize = e.target.value;
-                                    setFilters((prev) => ({ ...prev, pageSize:Number(newPageSize), page: 1 }));
+                                    setFilters((prev) => ({ ...prev, pageSize: Number(newPageSize), page: 1 }));
                                 }}
                                 className="h-10 w-30 appearance-none rounded-lg border border-gray-300 px-4 py-1"
                             >

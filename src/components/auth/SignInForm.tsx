@@ -54,8 +54,8 @@ export default function SignInForm() {
       const res = await authServices.login(form);
       localStorage.setItem("site-system", 'f168');
       Cookies.set("token", res.data, { expires: 1, path: '/' });
-
       refreshUser();
+      // window.location.reload();
 
       if (res.status_code == 200 && res.data) {
         setTimeout(() => {
