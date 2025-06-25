@@ -42,7 +42,7 @@ type UserType = {
 export default function UserTable() {
     const [data, setData] = useState<UserType[]>([]);
     const [currentPage, setCurrentPage] = useState(1);
-    const [itemsPerPage, setItemsPerPage] = useState(10);
+    // const [itemsPerPage, setItemsPerPage] = useState(10);
     const { isOpen, modalType, openModal, closeModal } = useMultiModal();
     const [showPassword, setShowPassword] = useState(false);
     const [form, setForm] = useState(initialForm);
@@ -54,10 +54,12 @@ export default function UserTable() {
         page: 1,
         pageSize: 10,
     });
-    const [totalItems, setTotalItems] = useState(0)
+    const [totalItems, setTotalItems] = useState(1)
     const totalPages = Math.ceil(totalItems / filters.pageSize);
-    const startIndex = (currentPage - 1) * itemsPerPage;
-    const endIndex = startIndex + itemsPerPage;
+
+    const startIndex = (currentPage - 1) * filters.pageSize;
+    const endIndex = startIndex + filters.pageSize;
+    
     const pagedData = data.slice(startIndex, endIndex);
 
     useEffect(() => {
@@ -176,6 +178,9 @@ export default function UserTable() {
             const usersData = await userServices.getUser(params);
             setData(usersData.users);
             setTotalItems(usersData.total);
+            // setCurrentPage(usersData.page);
+            console.log("TEST " +  usersData.page)
+            // setItemsPerPage(usersData.total);
 
         } catch (err) {
             toast.error("Danh sách người dùng bị lỗi !");
@@ -252,7 +257,8 @@ export default function UserTable() {
                             <TableBody className="divide-y divide-gray-100 dark:divide-white/[0.05]">
                                 {pagedData.map((user, index) => (
                                     <TableRow key={index}>
-                                        <TableCell className="px-5 py-4 sm:px-6 text-start">{(currentPage - 1) * itemsPerPage + index + 1}</TableCell>
+                                        <TableCell className="px-5 py-4 sm:px-6 text-start">{(currentPage - 1) * totalItems + index + 1}</TableCell>
+                                        {/* <TableCell>34</TableCell> */}
                                         <TableCell className="px-4 py-3 text-gray-500 text-start text-theme-sm dark:text-gray-400">{user.username}</TableCell>
                                         <TableCell className="px-4 py-3 text-gray-500 text-start text-theme-sm dark:text-gray-400">{user.site}</TableCell>
                                         <TableCell className="px-4 py-3 text-gray-500 text-start text-theme-sm dark:text-gray-400">

@@ -8,6 +8,7 @@ import {
     TableRow,
 } from "../ui/table";
 
+import { useSearchParams } from 'next/navigation'
 import { useMultiModal } from "@/hooks/useMultiModal";
 import orderServices from '@/services/orderServices';
 import { getSiteSystem } from "@/utils/storage";
@@ -39,6 +40,7 @@ interface Filters {
     from_date?: string;
     to_date?: string;
     status?: string;
+    type_order?: string;
     page: number;
     pageSize: number;
 }
@@ -90,6 +92,7 @@ export default function OrderTable() {
         full_name: "",
         product_id: "",
         status: "",
+        type_order: "",
         page: 1,
         pageSize: 10
     });
@@ -100,6 +103,8 @@ export default function OrderTable() {
     const startIndex = (currentPage - 1) * itemsPerPage;
     const endIndex = startIndex + itemsPerPage;
     const pagedData = data.slice(startIndex, endIndex);
+    const searchParams = useSearchParams();
+    const [typeRegister, setTypeRegister] = useState(searchParams.get('type_register'));
 
     useEffect(() => {
         if (isOpen) {
@@ -183,12 +188,14 @@ export default function OrderTable() {
         try {
             const params = {
                 site: getSiteSystem(),
+                type_order: typeRegister,
                 ...searchParams
             };
 
             const orders = await orderServices.getAll(params);
             setData(orders.data);
             setTotalItems(orders.total);
+            setCountData(orders.statusCount)
         } catch (err) {
             toast.error("Danh sách lỗi !");
         }
@@ -219,6 +226,15 @@ export default function OrderTable() {
     useEffect(() => {
         handleSearch();
     }, [filters]);
+
+    useEffect(() => {
+        const current = searchParams.get('type_register');
+        setTypeRegister(current);
+    }, [searchParams]);
+
+    useEffect(() => {
+        fetchOrders();
+    }, [typeRegister]);
 
     useEffect(() => {
         const handleClickOutside = (event: MouseEvent) => {
