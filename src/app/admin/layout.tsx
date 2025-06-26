@@ -10,8 +10,8 @@ import { useRouter } from "next/navigation";
 import { useAuth } from "@/context/AuthContext";
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
-  const { isExpanded, isHovered, isMobileOpen } = useSidebar();
-  const { user, isLoading } = useAuth();
+  const { isExpanded, isHovered, isMobileOpen, } = useSidebar();
+  const { user, isLoading, refreshUser} = useAuth();
   const router = useRouter();
 
   // Xử lý margin layout khi sidebar thay đổi

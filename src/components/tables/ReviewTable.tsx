@@ -148,7 +148,7 @@ export default function ReviewTable() {
             setCurrentPage(review.page);
             setItemsPerPage(review.total);
         } catch (err) {
-            toast.error("Danh sách lỗi !");
+            console.log("Danh sách lỗi !");
         }
     };
 

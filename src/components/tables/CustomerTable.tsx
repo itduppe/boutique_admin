@@ -34,6 +34,9 @@ interface Customer {
     status: boolean;
     site: string;
     point: number;
+    type_point: number;
+    balance: number;
+    note: string;
 }
 
 interface History {
@@ -47,6 +50,7 @@ interface History {
 
 export default function Customer() {
     const [data, setData] = useState<Customer[]>([]);
+    const [dataPoint, setDataPoint] = useState<Customer[]>([]);
     const [dataHistories, setDataHistories] = useState<History[]>([]);
     const { user } = useAuth();
     const [currentPage, setCurrentPage] = useState(1);
@@ -55,15 +59,25 @@ export default function Customer() {
     const [form, setForm] = useState(initialForm);
     const [loading, setLoading] = React.useState(false);
     const [error, setError] = useState('');
-    const [filters, setFilters] = React.useState<Filters>({
+    const [filters, setFilters] = useState({
+        username: '',
+        page: 1,
+        pageSize: 10,
+    });
+
+    const [pointfilters, setPointFilters] = React.useState<Filters>({
         username: '',
         pageSize: 10,
         page: 1,
     });
-    const [totalItems, setTotalItems] = useState(0)
+
+    const [totalItemPoints, setTotalItemPoints] = useState(0);
+    const [totalItems, setTotalItems] = useState(1)
     const totalPages = Math.ceil(totalItems / filters.pageSize);
-    const startIndex = (currentPage - 1) * itemsPerPage;
-    const endIndex = startIndex + itemsPerPage;
+    const totalPointPages = Math.ceil(totalItemPoints / filters.pageSize);
+
+    const startIndex = (currentPage - 1) * filters.pageSize;
+    const endIndex = startIndex + filters.pageSize;
     const pagedData = data.slice(startIndex, endIndex);
 
     useEffect(() => {
@@ -73,10 +87,22 @@ export default function Customer() {
     }, [isOpen, modalType]);
 
     const handleSearch = async () => {
-        const params: { username?: string } = {};
+        const { username, page, pageSize } = filters;
+        const params = {
+            ...(username && { username }),
+            page,
+            pageSize,
+            site: getSiteSystem()
+        };
 
-        if (filters.username) params.username = filters.username;
         await fetchCustomers(params);
+    }
+
+    const handleSearchPoint = async (username: string) => {
+        const params: { username?: string } = { username };
+
+        if (pointfilters.username) params.username = username;
+        await fetchCustomerHistoryPoint(params);
     }
 
     const updateCustomerStatus = async (username: string, site: string) => {
@@ -120,13 +146,26 @@ export default function Customer() {
         }
     };
 
-    useEffect(() => {
-        handleSearch();
-    }, [filters]);
+    const fetchCustomerHistoryPoint = async (searchParams = {}) => {
+        try {
+            const params = {
+                page: 1,
+                limit: 10,
+                site: getSiteSystem(),
+                ...searchParams
+            };
+
+            const customerPoints = await customerServices.getAllCustomerPoint(params);
+            setDataPoint(customerPoints.data);
+            setTotalItemPoints(customerPoints.total);
+        } catch (err) {
+            toast.error("Danh sách người dùng bị lỗi !");
+        }
+    };
 
     useEffect(() => {
-        fetchCustomers();
-    }, []);
+        handleSearch();
+    }, [filters, filters.page, filters.pageSize]);
 
     return (
         <>
@@ -197,12 +236,22 @@ export default function Customer() {
                                             <div className="flex justify-center gap-2">
                                                 <button
                                                     onClick={() => {
+                                                        handleSearchPoint(customer.username);
+                                                        openModal("find_history_point");
+                                                    }}
+                                                    className="text-white bg-blue-700 hover:bg-blue-800 focus:ring-4 focus:ring-blue-300 font-medium rounded-lg text-sm px-5 py-2.5 me-2 mb-2 dark:bg-blue-600 dark:hover:bg-blue-700 focus:outline-none dark:focus:ring-blue-800"
+                                                >
+                                                    Xem lịch điểm (Gem)
+                                                </button>
+
+                                                <button
+                                                    onClick={() => {
                                                         findHistoryCustomer(customer.username, customer.site);
                                                         openModal("find_history");
                                                     }}
                                                     className="text-white bg-blue-700 hover:bg-blue-800 focus:ring-4 focus:ring-blue-300 font-medium rounded-lg text-sm px-5 py-2.5 me-2 mb-2 dark:bg-blue-600 dark:hover:bg-blue-700 focus:outline-none dark:focus:ring-blue-800"
                                                 >
-                                                    Xem lịch sử
+                                                    Xem lịch sử chung
                                                 </button>
 
                                             </div>
@@ -278,11 +327,11 @@ export default function Customer() {
             </div>
 
             {/* Modal Form */}
-            <Modal isOpen={isOpen} onClose={closeModal} className="max-w-[700px] m-4">
-                <div className="no-scrollbar relative w-full max-w-[700px] overflow-y-auto rounded-3xl bg-white p-4 dark:bg-gray-900 lg:p-11">
+            <Modal isOpen={isOpen} onClose={closeModal} className="max-w-[1000px] m-4">
+                <div className="no-scrollbar relative w-full max-w-[1000px] overflow-y-auto rounded-3xl bg-white p-4 dark:bg-gray-900 lg:p-11">
                     <div className="px-2 pr-14">
                         <h4 className="mb-2 text-2xl font-semibold text-gray-800 dark:text-white/90">
-                            {modalType === "find_history" ? "Lịch sử nhận thưởng" : ""}
+                            {modalType === "find_history" ? "Lịch sử nhận thưởng" : "Lịch sử biến động điểm của khách hàng:"}
                         </h4>
                     </div>
 
@@ -292,13 +341,54 @@ export default function Customer() {
                                 dataHistories.map((history, index) => (
                                     <div key={index} className="py-5 border-b-3 border-black">
                                         Khách hàng: {history.username} <br />
-                                        Hệ thống site: {history.site} <br />
-                                        Kiểu quà tặng: {history.type} <br />
-                                        Ngày tạo: {history.createdAt} <br />
-                                        Ngày cập nhật: {history.updatedAt} <br />
-                                        Ghi chú: {history.note}
+                                        Kiểu quà tặng: <span className="text-red-500">{history.type}</span> <br />
+                                        Ngày tạo: {formatDateTimeVN(history.createdAt)} <br />
+                                        Ngày cập nhật: {formatDateTimeVN(history.updatedAt)} <br />
+                                        Ghi chú: <span className="text-red-500">{history.note}</span>
                                     </div>
                                 ))
+                            )}
+
+                            {modalType === "find_history_point" && (
+
+                                <Table>
+                                    <TableHeader className="border-b border-gray-100 dark:border-white/[0.05]">
+                                        <TableRow>
+                                            {["STT", "Tên tài khoản", "Số điểm", "Trang thái", "Ghi chú", "Số dư sau đó",].map((header, idx) => (
+                                                <TableCell
+                                                    key={idx}
+                                                    isHeader
+                                                    className={`px-5 py-3 font-medium text-gray-500 ${header === "Hành Động" ? "text-center" : "text-start"} text-theme-xs dark:text-gray-400`}
+                                                >
+                                                    {header}
+                                                </TableCell>
+                                            ))}
+                                        </TableRow>
+                                    </TableHeader>
+
+                                    <TableBody className="divide-y divide-gray-100 dark:divide-white/[0.05]">
+                                        {dataPoint.map((point, index) => (
+                                            <TableRow key={index}>
+                                                <TableCell className="px-5 py-4 sm:px-6 text-start">{index + 1}</TableCell>
+                                                <TableCell className="px-5 py-4 sm:px-6 text-start">{point.username}</TableCell>
+                                                <TableCell className="px-5 py-4 sm:px-6 text-start">{point.point}</TableCell>
+                                                <TableCell className="px-5 py-4 sm:px-6 text-start">
+                                                    {point.type_point == 1 ?
+                                                        (
+                                                            <span className="text-green-500">Cộng điểm</span>
+                                                        )
+                                                        :
+                                                        (
+                                                            <span className="text-red-500">Trừ điểm</span>
+                                                        )
+                                                    }
+                                                </TableCell>
+                                                <TableCell className="px-5 py-4 sm:px-6 text-start text-red-500 max-w-[200px]">{point.note}</TableCell>
+                                                <TableCell className="px-5 py-4 sm:px-6 text-start">{point.balance}</TableCell>
+                                            </TableRow>
+                                        ))}
+                                    </TableBody>
+                                </Table>
                             )}
                         </div>
 

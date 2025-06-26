@@ -120,7 +120,7 @@ export default function IpWhiteList() {
             const IpWhiteListData = await ipWhitelistServices.getIpWhitelist(params);
             setUserWhitelistIp(IpWhiteListData.data);
         } catch (err) {
-            toast.error("Danh sách IP bị lỗi !");
+            console.log("Danh sách IP bị lỗi !");
         }
     };
 

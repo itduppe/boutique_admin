@@ -103,7 +103,6 @@ export default function SesstionsPointTable() {
 
         try {
             await sessionPointServices.delete(id);
-            toast.success("Xóa bình luận thành công");
             fetchSesstionsPoint();
         } catch (err) {
             setError('Xóa bình luận thất bại. Vui lòng kiểm tra thông tin.');
@@ -133,7 +132,7 @@ export default function SesstionsPointTable() {
             setData(sesstionsPoint.data);
             setCurrentPage(sesstionsPoint.page);
         } catch (err) {
-            toast.error("Danh sách lỗi !");
+            console.log("Danh sách lỗi !");
         }
     };
 

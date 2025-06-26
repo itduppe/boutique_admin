@@ -63,6 +63,7 @@ export interface Order {
     full_name: string;
     phone_number: string;
     address: string;
+    ip: string;
     createdAt: string | Date;
     updatedAt: string | Date;
     status: string;
@@ -98,11 +99,13 @@ export default function OrderTable() {
     });
     const menuRefs = useRef<Record<string, HTMLDivElement | null>>({});
     const [showMenu, setShowMenu] = useState<string | null>(null);
-    const [totalItems, setTotalItems] = useState(0)
+    const [totalItems, setTotalItems] = useState(1)
     const totalPages = Math.ceil(totalItems / filters.pageSize);
-    const startIndex = (currentPage - 1) * itemsPerPage;
-    const endIndex = startIndex + itemsPerPage;
+
+    const startIndex = (currentPage - 1) * filters.pageSize;
+    const endIndex = startIndex + filters.pageSize;
     const pagedData = data.slice(startIndex, endIndex);
+
     const searchParams = useSearchParams();
     const [typeRegister, setTypeRegister] = useState(searchParams.get('type_register'));
 
@@ -197,7 +200,7 @@ export default function OrderTable() {
             setTotalItems(orders.total);
             setCountData(orders.statusCount)
         } catch (err) {
-            toast.error("Danh sách lỗi !");
+            console.log("Danh sách lỗi !");
         }
     };
 
@@ -220,21 +223,10 @@ export default function OrderTable() {
     }
 
     useEffect(() => {
-        fetchOrders();
-    }, []);
-
-    useEffect(() => {
-        handleSearch();
-    }, [filters]);
-
-    useEffect(() => {
         const current = searchParams.get('type_register');
         setTypeRegister(current);
-    }, [searchParams]);
-
-    useEffect(() => {
-        fetchOrders();
-    }, [typeRegister]);
+        handleSearch();
+    }, [searchParams, typeRegister, filters])
 
     useEffect(() => {
         const handleClickOutside = (event: MouseEvent) => {
@@ -309,92 +301,95 @@ export default function OrderTable() {
                                     />
                                 </div>
                             </div>
+                            {typeRegister !== "donate" && typeRegister !== "giftcode" && (
+                                <>
+                                    <div className="w-[18.6%]">
+                                        <label htmlFor="phone_number" className="sr-only">Số điện thoại</label>
+                                        <div className="relative w-full">
+                                            <input
+                                                id="phone_number"
+                                                name="phone_number"
+                                                type="text"
+                                                value={filters.phone_number}
+                                                onChange={(e) => setFilters({ ...filters, phone_number: e.target.value })}
+                                                className="border border-gray-300 text-black text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full pl-2.5 p-2.5"
+                                                placeholder="Số điện thoại"
+                                            />
+                                        </div>
+                                    </div>
 
-                            <div className="w-[18.6%]">
-                                <label htmlFor="phone_number" className="sr-only">Số điện thoại</label>
-                                <div className="relative w-full">
-                                    <input
-                                        id="phone_number"
-                                        name="phone_number"
-                                        type="text"
-                                        value={filters.phone_number}
-                                        onChange={(e) => setFilters({ ...filters, phone_number: e.target.value })}
-                                        className="border border-gray-300 text-black text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full pl-2.5 p-2.5"
-                                        placeholder="Số điện thoại"
-                                    />
-                                </div>
-                            </div>
+                                    <div className="w-[18.6%]">
+                                        <label htmlFor="address" className="sr-only">Địa Chỉ</label>
+                                        <div className="relative w-full">
+                                            <input
+                                                id="address"
+                                                name="address"
+                                                type="text"
+                                                value={filters.address}
+                                                onChange={(e) => setFilters({ ...filters, address: e.target.value })}
+                                                className="border border-gray-300 text-black text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full pl-2.5 p-2.5"
+                                                placeholder="Địa Chỉ"
+                                            />
+                                        </div>
+                                    </div>
 
-                            <div className="w-[18.6%]">
-                                <label htmlFor="address" className="sr-only">Địa Chỉ</label>
-                                <div className="relative w-full">
-                                    <input
-                                        id="address"
-                                        name="address"
-                                        type="text"
-                                        value={filters.address}
-                                        onChange={(e) => setFilters({ ...filters, address: e.target.value })}
-                                        className="border border-gray-300 text-black text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full pl-2.5 p-2.5"
-                                        placeholder="Địa Chỉ"
-                                    />
-                                </div>
-                            </div>
+                                    <div className="w-[18.6%]">
+                                        <label htmlFor="full_name" className="sr-only">Tên đầy đủ</label>
+                                        <div className="relative w-full">
+                                            <input
+                                                id="full_name"
+                                                name="full_name"
+                                                type="text"
+                                                value={filters.full_name}
+                                                onChange={(e) => setFilters({ ...filters, full_name: e.target.value })}
+                                                className="border border-gray-300 text-black text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full pl-2.5 p-2.5"
+                                                placeholder="Tên đầy đủ"
+                                            />
+                                        </div>
+                                    </div>
 
-                            <div className="w-[18.6%]">
-                                <label htmlFor="full_name" className="sr-only">Tên đầy đủ</label>
-                                <div className="relative w-full">
-                                    <input
-                                        id="full_name"
-                                        name="full_name"
-                                        type="text"
-                                        value={filters.full_name}
-                                        onChange={(e) => setFilters({ ...filters, full_name: e.target.value })}
-                                        className="border border-gray-300 text-black text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full pl-2.5 p-2.5"
-                                        placeholder="Tên đầy đủ"
-                                    />
-                                </div>
-                            </div>
+                                    <div className="w-[18.6%]">
+                                        <label htmlFor="product_id" className="sr-only">ID sản phẩm</label>
+                                        <div className="relative w-full">
+                                            <input
+                                                id="product_id"
+                                                name="product_id"
+                                                type="text"
+                                                value={filters.product_id}
+                                                onChange={(e) => setFilters({ ...filters, product_id: e.target.value })}
+                                                className="border border-gray-300 text-black text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full pl-2.5 p-2.5"
+                                                placeholder="ID sản phẩm"
+                                            />
+                                        </div>
+                                    </div>
 
-                            <div className="w-[18.6%]">
-                                <label htmlFor="product_id" className="sr-only">ID sản phẩm</label>
-                                <div className="relative w-full">
-                                    <input
-                                        id="product_id"
-                                        name="product_id"
-                                        type="text"
-                                        value={filters.product_id}
-                                        onChange={(e) => setFilters({ ...filters, product_id: e.target.value })}
-                                        className="border border-gray-300 text-black text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full pl-2.5 p-2.5"
-                                        placeholder="ID sản phẩm"
-                                    />
-                                </div>
-                            </div>
+                                    <div className="w-[18.6%]">
+                                        <DatePicker
+                                            id="date-picker"
+                                            label="Ngày bắt đầu"
+                                            value={filters.from_date}
+                                            onChange={(selectedDates, dateStr01) => {
+                                                setFilters({ ...filters, from_date: dateStr01 });
+                                            }}
+                                            placeholder="Chọn ngày bắt đầu"
+                                        />
+                                    </div>
 
-                            <div className="w-[18.6%]">
-                                <DatePicker
-                                    id="date-picker"
-                                    label="Ngày bắt đầu"
-                                    value={filters.from_date}
-                                    onChange={(selectedDates, dateStr01) => {
-                                        setFilters({ ...filters, from_date: dateStr01 });
-                                    }}
-                                    placeholder="Chọn ngày bắt đầu"
-                                />
-                            </div>
+                                    <div className="w-[18.6%]">
+                                        <DatePicker
+                                            id="date-picker"
+                                            label="Ngày kết thúc"
+                                            value={filters.to_date}
+                                            onChange={(selectedDates, dateStr02) => {
+                                                setFilters({ ...filters, to_date: dateStr02 });
+                                            }}
+                                            placeholder="Chọn ngày kết thúc"
+                                        />
+                                    </div>
+                                </>
+                            )}
 
-                            <div className="w-[18.6%]">
-                                <DatePicker
-                                    id="date-picker"
-                                    label="Ngày kết thúc"
-                                    value={filters.to_date}
-                                    onChange={(selectedDates, dateStr02) => {
-                                        setFilters({ ...filters, to_date: dateStr02 });
-                                    }}
-                                    placeholder="Chọn ngày kết thúc"
-                                />
-                            </div>
-
-                            <div className="w-[18.6%] mt-7">
+                            <div className={`w-[18.6%] ${typeRegister !== "donate" && typeRegister !== "giftcode" ? "mt-7" : ""}`}>
                                 <button
                                     onClick={(e) => { e.preventDefault(); handleSearch(); }}
                                     type="submit"
@@ -412,7 +407,7 @@ export default function OrderTable() {
                 </div>
 
                 <div className="max-w-full overflow-x-auto">
-                    <div className="min-w-[1102px]">
+                    <div className="min-w-[1102px] min-h-80vh">
                         <Table>
                             <TableHeader className="border-b border-gray-100 dark:border-white/[0.05]">
                                 <TableRow>
@@ -432,11 +427,11 @@ export default function OrderTable() {
                                 {pagedData.map((order, index) => (
                                     <TableRow key={index}>
                                         <TableCell className="px-5 py-4 sm:px-6 text-start">{index + 1}</TableCell>
-                                        <TableCell className="px-4 py-3 text-gray-500 text-start text-theme-sm dark:text-gray-400">
+                                        <TableCell className="px-4 py-3 text-green-500 text-start text-theme-sm dark:text-gray-400 ">
                                             Mã sản phẩm: {order.product_id} <br />
                                             {order.product_name} <br />
-                                            Màu: {order.color} <br />
-                                            Size: {order.size} <br />
+                                            Màu: <span className="text-red-500">{order.color} </span><br />
+                                            Size: <span className="text-red-500">{order.size} </span><br />
                                         </TableCell>
                                         <TableCell className="px-4 py-3 text-gray-500 text-start text-theme-sm dark:text-gray-400">{order.username}</TableCell>
                                         <TableCell className="px-4 py-3 text-gray-500 text-start text-theme-sm dark:text-gray-400">{order.full_name}</TableCell>
@@ -444,7 +439,7 @@ export default function OrderTable() {
                                         <TableCell className="px-4 py-3 text-gray-500 text-theme-sm dark:text-gray-400">{order.address}</TableCell>
                                         <TableCell className="px-4 py-3 text-gray-500 text-start text-theme-sm dark:text-gray-400">{formatDateTimeVN(order.createdAt)}</TableCell>
                                         <TableCell className="px-4 py-3 text-gray-500 text-theme-sm dark:text-gray-400">{formatDateTimeVN(order.updatedAt)}</TableCell>
-                                        <TableCell className="px-4 py-3 text-gray-500 text-theme-sm dark:text-gray-400"> Đang cập nhật </TableCell>
+                                        <TableCell className="px-4 py-3 text-gray-500 text-theme-sm dark:text-gray-400">{order.ip}</TableCell>
 
                                         <TableCell className="px-4 py-3 text-theme-sm dark:text-gray-400 text-center text-white">
                                             {Object.entries(information.order_status).map(([key, label]) => (

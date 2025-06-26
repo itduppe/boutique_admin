@@ -8,12 +8,14 @@ const UserApi = axios.create({
   },
 });
 
-if (typeof window !== 'undefined') {
+UserApi.interceptors.request.use((config) => {
   const token = Cookies.get("token");
-
   if (token) {
-    UserApi.defaults.headers.Authorization = `Bearer ${token}`;
+    config.headers.Authorization = `Bearer ${token}`;
   }
-}
+  return config;
+}, (error) => {
+  return Promise.reject(error);
+});
 
 export default UserApi;

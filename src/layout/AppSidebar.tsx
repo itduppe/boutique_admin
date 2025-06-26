@@ -66,13 +66,13 @@ const othersItems: NavItem[] = [
         role: ["user", "admin", "superadmin"],
       },
       {
-        name: "Duyệt đơn từ thiện",
+        name: "Ủng hộ từ thiện",
         path: "/admin/orders",
         query: { type_register: "donate" },
         role: ["user", "admin", "superadmin"],
       },
       {
-        name: "Duyệt đơn Giftcode",
+        name: "GiftCode đã phát",
         path: "/admin/orders",
         query: { type_register: "giftcode" },
         role: ["user", "admin", "superadmin"],

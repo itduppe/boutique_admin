@@ -42,7 +42,6 @@ type UserType = {
 export default function UserTable() {
     const [data, setData] = useState<UserType[]>([]);
     const [currentPage, setCurrentPage] = useState(1);
-    // const [itemsPerPage, setItemsPerPage] = useState(10);
     const { isOpen, modalType, openModal, closeModal } = useMultiModal();
     const [showPassword, setShowPassword] = useState(false);
     const [form, setForm] = useState(initialForm);
@@ -59,7 +58,6 @@ export default function UserTable() {
 
     const startIndex = (currentPage - 1) * filters.pageSize;
     const endIndex = startIndex + filters.pageSize;
-    
     const pagedData = data.slice(startIndex, endIndex);
 
     useEffect(() => {
@@ -178,12 +176,8 @@ export default function UserTable() {
             const usersData = await userServices.getUser(params);
             setData(usersData.users);
             setTotalItems(usersData.total);
-            // setCurrentPage(usersData.page);
-            console.log("TEST " +  usersData.page)
-            // setItemsPerPage(usersData.total);
-
         } catch (err) {
-            toast.error("Danh sách người dùng bị lỗi !");
+            console.log("Danh sách người dùng bị lỗi !");
         }
     };
 
@@ -195,10 +189,6 @@ export default function UserTable() {
     useEffect(() => {
         handleSearch();
     }, [filters.page, filters.pageSize, filters.username]);
-
-    useEffect(() => {
-        fetchUsers();
-    }, []);
 
     return (
         <>
@@ -270,7 +260,7 @@ export default function UserTable() {
                                             >
                                                 <option value="">-- Phân quyền --</option>
                                                 {Object.entries(information.role).map(([key, label]) => (
-                                                    <option key={key} value={key} selected={key === user.role}>
+                                                    <option key={key} value={key}>
                                                         {label}
                                                     </option>
                                                 ))}

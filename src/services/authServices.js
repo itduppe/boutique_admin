@@ -8,7 +8,7 @@ const authServices = {
 
       return res.data;
     } catch (error) {
-      toast.error("Vui lòng liên hệ quản trị viên Website");
+      toast.error(error?.response?.data?.message);
       throw error;
     }
   },

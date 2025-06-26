@@ -110,7 +110,6 @@ export default function TemplateMessagesTable() {
 
         try {
             await templateMessageServices.delete(id);
-            toast.success("Xóa bình luận thành công");
             fetchMessages();
         } catch (err) {
             setError('Xóa bình luận thất bại. Vui lòng kiểm tra thông tin.');
@@ -142,7 +141,7 @@ export default function TemplateMessagesTable() {
             setCurrentPage(review.page);
             setItemsPerPage(review.total);
         } catch (err) {
-            toast.error("Danh sách lỗi !");
+            console.log("Danh sách lỗi !");
         }
     };
 
@@ -158,7 +157,7 @@ export default function TemplateMessagesTable() {
             const products = await productServices.getAll(params);
             setProducsData(products.data);
         } catch (err) {
-            toast.error("Danh sách lỗi !");
+            console.log("Danh sách lỗi !");
         }
     };
 

@@ -162,10 +162,11 @@ export default function ProductTable() {
         status: true
     });
 
-    const [totalItems, setTotalItems] = useState(0)
+    const [totalItems, setTotalItems] = useState(1)
     const totalPages = Math.ceil(totalItems / filters.pageSize);
-    const startIndex = (currentPage - 1) * itemsPerPage;
-    const endIndex = startIndex + itemsPerPage;
+
+    const startIndex = (currentPage - 1) * filters.pageSize;
+    const endIndex = startIndex + filters.pageSize;
     const pagedData = data.slice(startIndex, endIndex);
 
     useEffect(() => {
@@ -390,7 +391,7 @@ export default function ProductTable() {
             setData(products.data);
             setTotalItems(products.total);
         } catch (err) {
-            toast.error("Danh sách lỗi !");
+            console.log("Danh sách lỗi !");
         }
     };
 
@@ -418,10 +419,6 @@ export default function ProductTable() {
     useEffect(() => {
         handleSearch();
     }, [filters]);
-
-    useEffect(() => {
-        fetchProducts();
-    }, []);
 
     return (
         <>
