@@ -314,20 +314,21 @@ export default function ProductTable() {
     };
 
     const addDetailItem = () => {
+        const newIndex = form.details.length + 1;
+        const randomSuffix = Math.floor(Math.random() * 90 + 10);
+        const newDetail = {
+            product_detail_id: `D_${form.product_id}_${newIndex}${randomSuffix}`,
+            color: '',
+            size: '',
+            stock: 0,
+            status: true
+        };
+
         setForm({
             ...form,
-            details: [
-                ...form.details,
-                {
-                    product_detail_id: editProductId,
-                    color: '',
-                    size: '',
-                    stock: 0,
-                    status: true
-                }
-            ]
+            details: [...form.details, newDetail]
         });
-    }
+    };
 
     const removeDetailItem = (index: number) => {
         const newDetails = form.details.filter((_, i) => i !== index);
