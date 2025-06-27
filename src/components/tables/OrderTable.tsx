@@ -99,6 +99,8 @@ export default function OrderTable() {
     });
     const menuRefs = useRef<Record<string, HTMLDivElement | null>>({});
     const [showMenu, setShowMenu] = useState<string | null>(null);
+    const [selectedOrders, setSelectedOrders] = useState<string[]>([]);
+    const [selectAll, setSelectAll] = useState(false);
     const [totalItems, setTotalItems] = useState(1)
     const totalPages = Math.ceil(totalItems / filters.pageSize);
 
@@ -120,7 +122,25 @@ export default function OrderTable() {
             await orderServices.delete(id);
             fetchOrders();
         } catch (err) {
-            setError('Xóa bình luận thất bại. Vui lòng kiểm tra thông tin.');
+            setError('Xóa Order thất bại.');
+        }
+    };
+
+    const changleStatusMultipleOrders = async (status: string, ids: string[]) => {
+        try {
+            await orderServices.changleOrderList(status, ids);
+            fetchOrders();
+        } catch (err) {
+            setError('Thay đổi trạng thái đơn hàng thất bại.');
+        }
+    };
+
+    const deleteMultipleOrders = async (ids: string[]) => {
+        try {
+            await orderServices.deleteList(ids);
+            fetchOrders();
+        } catch (err) {
+            setError('Xóa đơn hàng thất bại.');
         }
     };
 
@@ -216,7 +236,7 @@ export default function OrderTable() {
                 toast.error(res.message)
             }
         } catch (err) {
-            setError('Thao tác thất bại. Vui lòng kiểm tra thông tin.');
+            setError('Thao tác thất bại.');
         } finally {
             setLoading(false);
         }
@@ -266,13 +286,54 @@ export default function OrderTable() {
                     ))}
                 </div>
 
-                <div className="w-full flex justify-end">
+                <div className="w-full flex justify-end items-center">
+                    <h2>Thao tác theo danh sách : {" "} {" "}</h2>
                     <button
-                        onClick={() => openModal("add")}
+                        onClick={() => deleteMultipleOrders(selectedOrders)}
                         type="button"
-                        className="focus:outline-none text-white bg-green-700 hover:bg-green-800 focus:ring-4 focus:ring-green-300 font-medium rounded-lg text-sm px-5 py-2.5 me-2 mb-2 dark:bg-green-600 dark:hover:bg-green-700 dark:focus:ring-green-800"
+                        className="focus:outline-none text-white bg-red-700 hover:bg-red-800 focus:ring-4 focus:ring-green-300 font-medium rounded-lg text-sm px-5 py-2.5 me-2 mb-2 dark:bg-green-600 dark:hover:bg-green-700 dark:focus:ring-green-800"
                     >
-                        Xóa nhiều order
+                        Xóa nhiều order ( {selectedOrders.length} )
+                    </button>
+
+                    <button
+                        onClick={() => changleStatusMultipleOrders("confirm", selectedOrders)}
+                        type="button"
+                        className="focus:outline-none text-white bg-blue-700 hover:bg-blue-800 focus:ring-4 focus:ring-green-300 font-medium rounded-lg text-sm px-5 py-2.5 me-2 mb-2 dark:bg-green-600 dark:hover:bg-green-700 dark:focus:ring-green-800"
+                    >
+                        Gửi thư ( {selectedOrders.length} )
+                    </button>
+
+                    <button
+                        onClick={() => changleStatusMultipleOrders("deny", selectedOrders)}
+                        type="button"
+                        className="focus:outline-none text-white bg-blue-700 hover:bg-blue-800 focus:ring-4 focus:ring-green-300 font-medium rounded-lg text-sm px-5 py-2.5 me-2 mb-2 dark:bg-green-600 dark:hover:bg-green-700 dark:focus:ring-green-800"
+                    >
+                        Từ chối ( {selectedOrders.length} )
+                    </button>
+
+                    <button
+                        onClick={() => changleStatusMultipleOrders("shipped", selectedOrders)}
+                        type="button"
+                        className="focus:outline-none text-white bg-blue-700 hover:bg-blue-800 focus:ring-4 focus:ring-green-300 font-medium rounded-lg text-sm px-5 py-2.5 me-2 mb-2 dark:bg-green-600 dark:hover:bg-green-700 dark:focus:ring-green-800"
+                    >
+                        Giao hàng ( {selectedOrders.length} )
+                    </button>
+
+                    <button
+                        onClick={() => changleStatusMultipleOrders("success", selectedOrders)}
+                        type="button"
+                        className="focus:outline-none text-white bg-blue-700 hover:bg-blue-800 focus:ring-4 focus:ring-green-300 font-medium rounded-lg text-sm px-5 py-2.5 me-2 mb-2 dark:bg-green-600 dark:hover:bg-green-700 dark:focus:ring-green-800"
+                    >
+                        Hoàn tất ( {selectedOrders.length} )
+                    </button>
+
+                    <button
+                        onClick={() => changleStatusMultipleOrders("refund", selectedOrders)}
+                        type="button"
+                        className="focus:outline-none text-white bg-blue-700 hover:bg-blue-800 focus:ring-4 focus:ring-green-300 font-medium rounded-lg text-sm px-5 py-2.5 me-2 mb-2 dark:bg-green-600 dark:hover:bg-green-700 dark:focus:ring-green-800"
+                    >
+                        Trả lại ( {selectedOrders.length} )
                     </button>
 
                     <button
@@ -411,6 +472,19 @@ export default function OrderTable() {
                         <Table>
                             <TableHeader className="border-b border-gray-100 dark:border-white/[0.05]">
                                 <TableRow>
+                                    <TableCell className="px-4 py-3 text-center">
+                                        <input
+                                            type="checkbox"
+                                            className="w-5 h-5"
+                                            checked={selectAll}
+                                            onChange={(e) => {
+                                                const isChecked = e.target.checked;
+                                                setSelectAll(isChecked);
+                                                setSelectedOrders(isChecked ? pagedData.map((o) => o._id) : []);
+                                            }}
+                                        />
+                                    </TableCell>
+
                                     {["STT", "Sản phẩm", "Tài khoản", "Tên người nhận", "Điện thoại", "Địa chỉ", "TG Đăng Ký", "TG Xác nhận", "IP", "Trạng Thái", "Hành Động"].map((header, idx) => (
                                         <TableCell
                                             key={idx}
@@ -426,6 +500,19 @@ export default function OrderTable() {
                             <TableBody className="divide-y divide-gray-100 dark:divide-white/[0.05]">
                                 {pagedData.map((order, index) => (
                                     <TableRow key={index}>
+                                        <TableCell className="px-4 py-3 text-center">
+                                            <input
+                                                type="checkbox"
+                                                className="w-5 h-5"
+                                                checked={selectedOrders.includes(order._id)}
+                                                onChange={(e) => {
+                                                    const isChecked = e.target.checked;
+                                                    setSelectedOrders((prev) =>
+                                                        isChecked ? [...prev, order._id] : prev.filter((id) => id !== order._id)
+                                                    );
+                                                }}
+                                            />
+                                        </TableCell>
                                         <TableCell className="px-5 py-4 sm:px-6 text-start">{index + 1}</TableCell>
                                         <TableCell className="px-4 py-3 text-green-500 text-start text-theme-sm dark:text-gray-400 ">
                                             Mã sản phẩm: {order.product_id} <br />
@@ -450,7 +537,7 @@ export default function OrderTable() {
                                         <TableCell className="px-4 py-3 text-gray-500 text-theme-sm dark:text-gray-400 relative">
                                             <div className="flex justify-center items-center gap-2">
                                                 {/* Dropdown sửa trạng thái */}
-                                                <div className="relative inline-block text-left">
+                                                <div className="relative inline-block text-left w-32">
                                                     <button
                                                         onClick={() => setShowMenu(order._id)}
                                                         type="button"

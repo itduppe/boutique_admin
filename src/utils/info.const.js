@@ -9,8 +9,11 @@ export const information = {
   product_tag: {
     in_stock: "Còn hàng",
     out_of_stock: "Hết hàng",
-    hot: "Hot",
-    upcoming: "Sắp ra mắt",
+    upcoming: "Đang về hàng",
+    hot_in_stock: "Sản phẩm hot còn hàng",
+    hot_out_of_stock: "Sản phẩm hot hết hàng",
+    special_in_stock: "Đặc biệt còn hàng",
+    special_out_of_stock: "Đặc biệt hết hàng"
   },
 
   product_type: {

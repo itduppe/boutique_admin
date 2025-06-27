@@ -49,9 +49,26 @@ const orderServices = {
         }
     },
 
-    deleteList: async () => {
+    changleOrderList: async (status, ids) => {
         try {
-            const res = await UserApi.post("/orders/delete-many");
+            const res = await UserApi.patch("/orders/update-many-status", {
+                status: status,
+                ids: ids,
+            });
+            
+            toast.success("Thay đổi trạng thái đơn hàn thành công!");
+            return res.data;
+        } catch (error) {
+            return handleError(error, "Lỗi khi thay đổi trạng thái đơn hàng");
+        }
+    },
+
+    deleteList: async (ids) => {
+        try {
+            const res = await UserApi.post("/orders/delete-many", {
+                ids: ids,
+            });
+
             toast.success("Xóa danh sách đơn hàng thành công!");
             return res.data;
         } catch (error) {
